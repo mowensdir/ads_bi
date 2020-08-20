@@ -1,0 +1,17 @@
+{% block content %}
+        <div id="main" class="{{ container }}">
+          <div class="row row-offcanvas row-offcanvas-left clearfix">
+              <div id="user-content-wrapper" class="col-md-4 offset-md-4 mt-5">
+                <main{{ content_attributes }}>
+                  <section class="section">
+                    <div class="text-center mb-5 clearfix">
+                      <img src="/{{ directory }}/logo.svg" alt="ADS Logo" width="125" height="134" />
+                    </div>
+                    <a id="main-content" tabindex="-1"></a>
+                    {{ page.content }}
+                  </section>
+                </main>
+              </div>
+          </div>
+        </div>
+{% endblock %}
