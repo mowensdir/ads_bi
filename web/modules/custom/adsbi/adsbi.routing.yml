@@ -1,0 +1,6 @@
+adsbi.home:
+  path: '/app'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\HomeController::default'
+  requirements:
+    _permission: 'access adsbi'

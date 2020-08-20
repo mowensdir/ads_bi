@@ -1,0 +1,30 @@
+html {
+  height: 100%;
+}
+body {
+  min-height: 100%;
+}
+#adsbi-sidebar-wrapper {
+  background-color: #161617;
+  border-right: 4px solid #0073b6;
+  color: rgba(255, 255, 255, 0.8);
+}
+#adsbi-sidebar-wrapper a {
+  color: rgba(255, 255, 255, 0.8);
+}
+#adsbi-sidebar-wrapper a:hover {
+  color: #fff;
+}
+#adsbi-sidebar-accordion {
+  border-bottom: 1px solid #4e4e4e;
+}
+#adsbi-sidebar-accordion .nav-item.group-wrapper {
+  border-top: 1px solid #4e4e4e;
+}
+#adsbi-sidebar-accordion .item {
+  background-color: #4e4e4e;
+  border-top: 1px solid #161617;
+}
+#adsbi-sidebar-accordion .nav-item.active {
+  background-color: #0073b6 !important;
+}

@@ -1,0 +1,107 @@
+{{ attach_library('bootstrap_adsbi/adsbi') }}
+
+<div id="adsbi-page-app">
+  <div id="page-wrapper">
+    <div id="page">
+
+{% block content %}
+      <div id="main" class="{{ container }}">
+        <div class="row row-offcanvas row-offcanvas-left clearfix">
+          <div id="adsbi-sidebar-wrapper" class="col-md-2 px-0">
+            <div id="logo-wrapper" class="text-center my-3 clearfix">
+              <img src="/{{ directory }}/logo.svg" alt="ADS Logo" width="100" height="107" />
+            </div>
+            <ul id="adsbi-sidebar-accordion" class="nav nav-pills flex-column accordion">
+              <li id="dashboard-nav" class="nav-item group-wrapper">
+                <a class="nav-link" href="/app">
+                  <i class="far fa-chart-bar mr-2"></i>Dashboard
+                </a>
+              </li>
+              <li class="nav-item group-wrapper">
+                <a class="nav-link" data-toggle="collapse" href="#inventory-group">
+                  <i class="fas fa-warehouse mr-2"></i>Inventory
+                </a>
+                <div id="inventory-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
+                  <ul class="nav flex-column">
+                    <li class="nav-item item">
+                      <a class="nav-link" href="#">2013 Compliance</a>
+                    </li>
+                    <li class="nav-item item">
+                      <a class="nav-link" href="#">Coming soon!</a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item group-wrapper">
+                <a class="nav-link" data-toggle="collapse" href="#drivers-group">
+                  <i class="fas fa-car-side mr-2"></i>Drivers
+                </a>
+                <div id="drivers-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
+                  <ul class="nav flex-column">
+                    <li class="nav-item item">
+                      <a class="nav-link" href="#">Coming soon!</a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item group-wrapper">
+                <a class="nav-link" data-toggle="collapse" href="#dealers-group">
+                  <i class="fas fa-wrench mr-2"></i>Dealers
+                </a>
+                <div id="dealers-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
+                  <ul class="nav flex-column">
+                    <li class="nav-item item">
+                      <a class="nav-link" href="#">Coming soon!</a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item group-wrapper">
+                <a class="nav-link" data-toggle="collapse" href="#states-group">
+                  <i class="fas fa-flag-usa mr-2"></i>States
+                </a>
+                <div id="states-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
+                  <ul class="nav flex-column">
+                    <li class="nav-item item">
+                      <a class="nav-link" href="#">Coming soon!</a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item group-wrapper">
+                <a class="nav-link" data-toggle="collapse" href="#wireless-group">
+                  <i class="fas fa-wifi mr-2"></i>Wireless
+                </a>
+                <div id="wireless-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
+                  <ul class="nav flex-column">
+                    <li class="nav-item item">
+                      <a class="nav-link" href="#">Coming soon!</a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div id="adsbi-main-wrapper" class="col-md-10">
+            <main{{ content_attributes }}>
+              <section class="section">
+                <a id="main-content" tabindex="-1"></a>
+                {{ page.content }}
+              </section>
+            </main>
+          </div>
+        </div>
+      </div>
+{% endblock %}
+
+{% if page.highlighted %}
+      <div class="highlighted">
+        <aside class="{{ container }} section clearfix" role="complementary">
+          {{ page.highlighted }}
+        </aside>
+      </div>
+{% endif %}
+
+    </div>
+  </div>
+</div>

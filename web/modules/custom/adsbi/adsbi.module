@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * ADS BI module.
+ */
+
+use Drupal\adsbi\Utils\AdsbiUtils;
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Custom alteration of the core user_login_form form
+ *  - Hide the description text on the Username and Password fields
+ *
+ * {@inheritdoc}
+ */
+function adsbi_form_user_login_form_alter(&$form, $form_state, $form_id) {
+  unset($form['name']['#description']);
+  unset($form['pass']['#description']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Custom alteration of the core user_pass form
+ *  - Shorten the form's markup text
+ *
+ * {@inheritdoc}
+ */
+function adsbi_form_user_pass_alter(&$form, $form_state, $form_id) {
+  // Get user object
+  $user = \Drupal::currentUser();
+
+  if (!$user->isAuthenticated()) {
+    $form['mail']['#markup'] = 'Instructions will be sent to your email address.';
+  }
+}

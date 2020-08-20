@@ -1,0 +1,20 @@
+{
+  "name": "drupal/adsbi",
+  "description": "Provides the custom ADS BI application functionality.",
+  "type": "drupal-module",
+  "authors": [
+    {
+      "name": "Alex King",
+      "email": "alex@askingtech.com",
+      "role": "Maintainer"
+    }
+  ],
+  "license": "proprietary",
+  "require": {},
+  "suggest": {},
+  "autoload": {
+    "psr-4": {
+      "Drupal\\adsbi\\": "src/"
+    }
+  }
+}

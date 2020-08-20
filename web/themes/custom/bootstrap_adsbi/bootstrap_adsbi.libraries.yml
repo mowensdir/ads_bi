@@ -27,3 +27,11 @@ color.preview:
     color/preview.js: {}
   dependencies:
     - color/drupal.color
+adsbi:
+  css:
+    theme:
+      css/adsbi.css: {}
+  js:
+    js/adsbi.js: {}
+  dependencies:
+    - core/jquery
