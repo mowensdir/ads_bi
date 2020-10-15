@@ -1,6 +1,52 @@
-adsbi.home:
+adsbi.dashboard:
   path: '/app'
   defaults:
-    _controller: '\Drupal\adsbi\Controller\HomeController::default'
+    _controller: '\Drupal\adsbi\Controller\DashboardController::default'
+    _title: 'Dashboard'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.upgrades:
+  path: '/app/inventory/upgrades'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::upgrades'
+    _title: 'Device Upgrades'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.ksswapsretail:
+  path: '/app/inventory/ks-swaps-retail'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::ksSwapsRetail'
+    _title: 'KS HH Swaps Retail'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.ksswapsdistributors:
+  path: '/app/inventory/ks-swaps-distributors'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::ksSwapsDistributors'
+    _title: 'KS HH Swaps Distributors'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.data.inventory.upgrades.unresolved:
+  path: '/data/inventory/upgrades/unresolved'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesUnresolved'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.data.inventory.upgrades.resolved:
+  path: '/data/inventory/upgrades/resolved'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesResolved'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.data.inventory.upgrades.removed:
+  path: '/data/inventory/upgrades/removed'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesRemoved'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.data.inventory.upgrades.statebd:
+  path: '/data/inventory/upgrades/statebd'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesStateBD'
   requirements:
     _permission: 'access adsbi'

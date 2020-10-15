@@ -1,0 +1,44 @@
+h1,
+h2,
+h1 a,
+h2 a {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+}
+h1,
+h1 a {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 700;
+}
+h2,
+h2 a {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 700;
+}
+h4,
+h5,
+h6,
+label,
+th,
+tr {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+}
+h3,
+h3 a {
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+}
+body,
+p,
+a,
+li {
+  font-family: 'Barlow', sans-serif;
+  font-weight: 200;
+}
+.font-barlow {
+  font-family: 'Barlow', sans-serif;
+}
+.font-barlow-sc {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+}

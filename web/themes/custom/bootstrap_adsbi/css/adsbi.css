@@ -25,6 +25,16 @@ body {
   background-color: #4e4e4e;
   border-top: 1px solid #161617;
 }
+#adsbi-sidebar-accordion .subnav-link {
+  font-size: 0.9rem;
+}
 #adsbi-sidebar-accordion .nav-item.active {
   background-color: #0073b6 !important;
+}
+td.details-control {
+  background: url('/sites/default/files/details_open.png') no-repeat center center;
+  cursor: pointer;
+}
+tr.shown td.details-control {
+  background: url('/sites/default/files/details_close.png') no-repeat center center;
 }

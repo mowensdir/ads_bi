@@ -20,11 +20,11 @@
   }
 
   function activateNav() {
-    var slct = $("#content-wrapper").data("activate"),
+    var slct = $(".content-wrapper").data("activate"),
         $elm = $(slct);
     $elm.addClass("active");
     if ($elm.hasClass("item")) {
-      var $grp = $elm.closest("group-wrapper"),
+      var $grp = $elm.closest(".group-wrapper"),
           $nav = $grp.find(".group").first();
       $nav.addClass('show');
     }

@@ -2,17 +2,18 @@
 
 namespace Drupal\adsbi\Controller;
 
+use Drupal\adsbi\Utils\AdsbiUtils;
 use Drupal\Core\Controller\ControllerBase;
 
 /**
- * Defines the HomeController class.
+ * Defines the DashboardController class.
  */
-class HomeController extends ControllerBase {
+class DashboardController extends ControllerBase {
   /**
    *
    */
   public function default() {
-    $template_path = drupal_get_path('module', 'adsbi') . '/templates/home--default.html.twig';
+    $template_path = drupal_get_path('module', 'adsbi') . '/templates/dashboard--default.html.twig';
 
     return [
       '#type'     => 'inline_template',

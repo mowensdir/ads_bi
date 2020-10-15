@@ -32,3 +32,18 @@ function bootstrap_adsbi_form_system_theme_settings_alter(&$form, FormStateInter
     'bg-transparent' => t('Transparent'),
   ];
 }
+
+/**
+ * Implements hook_preprocess_HOOK() for page templates.
+ *
+ * Override base theme $variables
+ *  - Remove 'col' class from content_attributes
+ */
+function bootstrap_adsbi_preprocess_page(&$variables) {
+  $variables['content_attributes'] = [
+    'class' => ['main-content'],
+    'id' => ['content'],
+    'role' => ['main'],
+  ];
+  $variables['uid'] = \Drupal::currentUser()->id();
+}

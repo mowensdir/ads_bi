@@ -1,0 +1,9 @@
+#inventory-ksswaps .summary-wrapper,
+#inventory-upgrades .summary-wrapper {
+  font-size: 0.95rem;
+}
+#inventory-ksswaps .dataTables_filter,
+#inventory-upgrades .dataTables_filter {
+  display: inline-flex;
+  float: right;
+}

@@ -11,6 +11,11 @@
             <div id="logo-wrapper" class="text-center my-3 clearfix">
               <img src="/{{ directory }}/logo.svg" alt="ADS Logo" width="100" height="107" />
             </div>
+            <div id="account-wrapper" class="text-center mb-3 clearfix">
+              <a href="/user/{{ uid }}/edit?destination=/">Profile</a>
+              <span> | </span>
+              <a href="/user/logout?destination=/user/login%3Fdestination%3D%2F">Logout</a>
+            </div>
             <ul id="adsbi-sidebar-accordion" class="nav nav-pills flex-column accordion">
               <li id="dashboard-nav" class="nav-item group-wrapper">
                 <a class="nav-link" href="/app">
@@ -23,11 +28,14 @@
                 </a>
                 <div id="inventory-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
                   <ul class="nav flex-column">
-                    <li class="nav-item item">
-                      <a class="nav-link" href="#">2013 Compliance</a>
+                    <li id="inventory-upgrades-nav" class="nav-item item">
+                      <a class="nav-link subnav-link" href="/app/inventory/upgrades">Device Upgrades</a>
                     </li>
-                    <li class="nav-item item">
-                      <a class="nav-link" href="#">Coming soon!</a>
+                    <li id="inventory-ksswapsretail-nav" class="nav-item item">
+                      <a class="nav-link subnav-link" href="/app/inventory/ks-swaps-retail">KS HH Swaps Retail</a>
+                    </li>
+                    <li id="inventory-ksswapsdistributors-nav" class="nav-item item">
+                      <a class="nav-link subnav-link" href="/app/inventory/ks-swaps-distributors">KS HH Swaps Distributors</a>
                     </li>
                   </ul>
                 </div>
@@ -39,7 +47,7 @@
                 <div id="drivers-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
                   <ul class="nav flex-column">
                     <li class="nav-item item">
-                      <a class="nav-link" href="#">Coming soon!</a>
+                      <a class="nav-link subnav-link" href="#">Coming soon!</a>
                     </li>
                   </ul>
                 </div>
@@ -51,7 +59,7 @@
                 <div id="dealers-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
                   <ul class="nav flex-column">
                     <li class="nav-item item">
-                      <a class="nav-link" href="#">Coming soon!</a>
+                      <a class="nav-link subnav-link" href="#">Coming soon!</a>
                     </li>
                   </ul>
                 </div>
@@ -63,7 +71,7 @@
                 <div id="states-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
                   <ul class="nav flex-column">
                     <li class="nav-item item">
-                      <a class="nav-link" href="#">Coming soon!</a>
+                      <a class="nav-link subnav-link" href="#">Coming soon!</a>
                     </li>
                   </ul>
                 </div>
@@ -75,14 +83,14 @@
                 <div id="wireless-group" class="collapse group" data-parent="#adsbi-sidebar-accordion">
                   <ul class="nav flex-column">
                     <li class="nav-item item">
-                      <a class="nav-link" href="#">Coming soon!</a>
+                      <a class="nav-link subnav-link" href="#">Coming soon!</a>
                     </li>
                   </ul>
                 </div>
               </li>
             </ul>
           </div>
-          <div id="adsbi-main-wrapper" class="col-md-10">
+          <div id="adsbi-main-wrapper" class="col-md-10 mt-3">
             <main{{ content_attributes }}>
               <section class="section">
                 <a id="main-content" tabindex="-1"></a>

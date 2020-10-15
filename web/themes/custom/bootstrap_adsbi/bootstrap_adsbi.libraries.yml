@@ -29,6 +29,9 @@ color.preview:
     - color/drupal.color
 adsbi:
   css:
+    component:
+      css/fonts.css: {}
+      //fonts.googleapis.com/css?family=Barlow|Barlow:200|Barlow:700|Barlow+Semi+Condensed|Barlow+Semi+Condensed:700: {}
     theme:
       css/adsbi.css: {}
   js:

@@ -1,0 +1,27 @@
+adsbi.inventory:
+  css:
+    theme:
+      css/inventory.css: {}
+adsbi.inventory.upgrades:
+  js:
+    js/inventory.upgrades.js: {}
+  dependencies:
+    - core/jquery
+adsbi.inventory.ks_swaps:
+  js:
+    js/inventory.ks_swaps.js: {}
+  dependencies:
+    - core/jquery
+adsbi.jquery.number:
+  js:
+    libraries/jquery.number/dist/js/jquery.number.js: {}
+  dependencies:
+    - core/jquery
+adsbi.datatables:
+  css:
+    theme:
+      libraries/DataTables/dist/css/datatables.css: {}
+  js:
+    libraries/DataTables/dist/js/datatables.js: {}
+  dependencies:
+    - core/jquery
