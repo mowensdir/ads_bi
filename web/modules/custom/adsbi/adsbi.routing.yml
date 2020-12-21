@@ -7,13 +7,26 @@ adsbi.dashboard:
     _permission: 'access adsbi'
 adsbi.inventory.upgrades:
   path: '/app/inventory/upgrades'
+  options:
+    no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryController::upgrades'
     _title: 'Device Upgrades'
   requirements:
     _permission: 'access adsbi'
+adsbi.inventory.distributorupgrades:
+  path: '/app/inventory/distributor-upgrades'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::distributorUpgrades'
+    _title: 'Distributor Device Upgrades'
+  requirements:
+    _permission: 'access adsbi'
 adsbi.inventory.ksswapsretail:
   path: '/app/inventory/ks-swaps-retail'
+  options:
+    no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryController::ksSwapsRetail'
     _title: 'KS HH Swaps Retail'
@@ -21,32 +34,77 @@ adsbi.inventory.ksswapsretail:
     _permission: 'access adsbi'
 adsbi.inventory.ksswapsdistributors:
   path: '/app/inventory/ks-swaps-distributors'
+  options:
+    no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryController::ksSwapsDistributors'
     _title: 'KS HH Swaps Distributors'
   requirements:
     _permission: 'access adsbi'
+adsbi.drivers.customerreports:
+  path: '/app/drivers/customer-reports'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\DriversController::customerReports'
+    _title: 'Customer Reports'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.drivers.customerreports.search:
+  path: '/app/drivers/customer-reports/search'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\DriversController::customerReportsDriverSearch'
+    _title: 'Customer Reports'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.drivers.customerreports.driver:
+  path: '/app/drivers/customer-reports/{did}'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\DriversController::customerReportsDriverDetail'
+    _title: 'Customer Reports'
+  requirements:
+    _permission: 'access adsbi'
 adsbi.data.inventory.upgrades.unresolved:
   path: '/data/inventory/upgrades/unresolved'
+  options:
+    no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesUnresolved'
   requirements:
     _permission: 'access adsbi'
 adsbi.data.inventory.upgrades.resolved:
   path: '/data/inventory/upgrades/resolved'
+  options:
+    no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesResolved'
   requirements:
     _permission: 'access adsbi'
 adsbi.data.inventory.upgrades.removed:
   path: '/data/inventory/upgrades/removed'
+  options:
+    no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesRemoved'
   requirements:
     _permission: 'access adsbi'
 adsbi.data.inventory.upgrades.statebd:
   path: '/data/inventory/upgrades/statebd'
+  options:
+    no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesStateBD'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.print.driverreport:
+  path: '/print/driver-report/{rid}'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\DriversController::printDriverReport'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.print.summaryreport:
+  path: '/print/summary-report/{rid}'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\DriversController::printSummaryReport'
   requirements:
     _permission: 'access adsbi'

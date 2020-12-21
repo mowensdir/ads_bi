@@ -1,3 +1,9 @@
 'access adsbi':
   title: 'Use ADS BI'
   description: ''
+'access adsbi inventory':
+  title: 'Use ADS BI Inventory Module'
+  description: ''
+'access adsbi driver':
+  title: 'Use ADS BI Driver Module'
+  description: ''

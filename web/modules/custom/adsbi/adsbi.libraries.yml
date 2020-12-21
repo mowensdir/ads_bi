@@ -1,3 +1,13 @@
+adsbi.drivers:
+  css:
+    theme:
+      css/drivers.css: {}
+adsbi.drivers.customer_reports:
+  js:
+    js/drivers.customer_reports.js: {}
+  dependencies:
+    - core/jquery
+    - adsbi/adsbi.datatables
 adsbi.inventory:
   css:
     theme:
@@ -5,6 +15,11 @@ adsbi.inventory:
 adsbi.inventory.upgrades:
   js:
     js/inventory.upgrades.js: {}
+  dependencies:
+    - core/jquery
+adsbi.inventory.distributorupgrades:
+  js:
+    js/inventory.distributorupgrades.js: {}
   dependencies:
     - core/jquery
 adsbi.inventory.ks_swaps:

@@ -1,0 +1,4 @@
+#drivers-customerreports .table-hover tbody tr:hover {
+  background-color: rgba(115,155,211,.5);
+  cursor: pointer;
+}

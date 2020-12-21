@@ -1,0 +1,19 @@
+{{ attach_library('adsbi/adsbi.drivers') }}
+{{ attach_library('adsbi/adsbi.drivers.customer_reports') }}
+
+<div id="drivers-customerreports" class="content-wrapper" data-activate="#drivers-customerreports-nav">
+  <h1>Customer Reports</h1>
+
+  <h3 class="my-3">Driver Search</h3>
+  <div class="row">
+    <div class="col-6">
+      <form id="driverSearchForm" action="/app/drivers/customer-reports/search" method="get">
+        <div class="form-group">
+          <label for="driverSearchInput">Driver Name, License Number or ID</label>
+          <input type="text" class="form-control form-control-lg" id="driverSearchInput" name="q">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" id="driverSearchSubmit">Submit</button>
+      </form>
+    </div>
+  </div>
+</div>

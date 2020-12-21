@@ -29,7 +29,8 @@
         "drupal/smtp": "^1.0@RC",
         "drupal/token": "^1.7",
         "drupal/twig_tweak": "^2.6",
-        "drush/drush": "^10.3"
+        "drush/drush": "^10.3",
+        "mikehaertl/phpwkhtmltopdf": "^2.4"
     },
     "conflict": {
         "drupal/drupal": "*"
