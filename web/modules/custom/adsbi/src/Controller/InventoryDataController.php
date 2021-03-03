@@ -133,9 +133,9 @@ SQL;
       , Drivers.State AS DriverState
       , Drivers.Zip AS DriverZip
       , Drivers.ProbationEnd AS DriverProbationEnd
-      , Dealers.CompanyName AS DealerName
-      , Dealers.State AS DealerState
-      , Dealers.Class AS DealerClass
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDealers.State, Dealers.State) AS DealerState
+      , COALESCE(ServiceDealers.Class, Dealers.Class) AS DealerClass
       , Distributors.Companyname AS DistributorName
       , Territories.Label AS TerritoryName
       , Territories.State AS TerritoryState
@@ -152,6 +152,9 @@ SQL;
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
       INNER JOIN {InventoryCompliance} USING(DriverID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
       LEFT JOIN {Items} AS HH ON (
         HH.DriverID = Drivers.DriverID
         AND
@@ -184,7 +187,6 @@ SQL;
               WHERE Items.ProductID = 1
                 AND Items.SerialNumber LIKE 'HH-%'
                 AND SUBSTRING(Items.SerialNumber FROM 4) < 23000
-                AND Items.SerialNumber = HH.SerialNumber
                 AND Items.DriverID = Drivers.DriverID
             )
             OR EXISTS (
@@ -193,7 +195,6 @@ SQL;
               WHERE Items.ProductID = 2
                 AND Items.SerialNumber LIKE 'VM-%'
                 AND SUBSTRING(Items.SerialNumber FROM 4) < 13300
-                AND Items.SerialNumber = VM.SerialNumber
                 AND Items.DriverID = Drivers.DriverID
             )
           )
@@ -217,9 +218,9 @@ SQL;
       , Drivers.State
       , Drivers.Zip
       , Drivers.ProbationEnd
-      , Dealers.CompanyName
-      , Dealers.State
-      , Dealers.Class
+      , DealerName
+      , DealerState
+      , DealerClass
       , Distributors.Companyname
       , Territories.Label
       , Territories.State
@@ -381,9 +382,9 @@ SQL;
       , COALESCE(InventoryCompliance.ComplianceDate, '') AS ComplianceDate
       , Drivers.FullName AS DriverName
       , Drivers.LicenseNumber AS DriverLicenseNumber
-      , Dealers.CompanyName AS DealerName
-      , Dealers.State AS DealerState
-      , Dealers.Class AS DealerClass
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDealers.State, Dealers.State) AS DealerState
+      , COALESCE(ServiceDealers.Class, Dealers.Class) AS DealerClass
       , Distributors.Companyname AS DistributorName
       , Territories.Label AS TerritoryName
       , Territories.State AS TerritoryState
@@ -395,6 +396,9 @@ SQL;
       INNER JOIN {Dealers} USING(DealerID)
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
     WHERE BaiidReports.Type IN ('Replacement', 'Installation', 'Repair', 'Removal')
       AND (
         (InventoryCompliance.Preassigned = 1 AND InventoryCompliance.ComplianceDate IS NOT NULL)
@@ -429,9 +433,9 @@ SQL;
       , InventoryCompliance.ComplianceDate
       , Drivers.FullName
       , Drivers.LicenseNumber
-      , Dealers.CompanyName
-      , Dealers.State
-      , Dealers.Class
+      , DealerName
+      , DealerState
+      , DealerClass
       , Distributors.Companyname
       , Territories.Label
       , Territories.State
@@ -482,9 +486,9 @@ SQL;
     SELECT Drivers.DriverID
       , Drivers.FullName AS DriverName
       , Drivers.LicenseNumber AS DriverLicenseNumber
-      , Dealers.CompanyName AS DealerName
-      , Dealers.State AS DealerState
-      , Dealers.Class AS DealerClass
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDealers.State, Dealers.State) AS DealerState
+      , COALESCE(ServiceDealers.Class, Dealers.Class) AS DealerClass
       , Distributors.Companyname AS DistributorName
       , Territories.Label AS TerritoryName
       , Territories.State AS TerritoryState
@@ -493,6 +497,9 @@ SQL;
       INNER JOIN {Dealers} USING(DealerID)
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
     WHERE Drivers.DriverID IN (:dids[])
 SQL;
 
@@ -641,19 +648,22 @@ SQL;
     FROM {InventoryACS}
       INNER JOIN {Drivers} USING(DriverID)
       INNER JOIN {Dealers} USING(DealerID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
 SQL;
 
     if ($retail) {
-      $sql .= " WHERE Dealers.Class = 'R'";
+      $sql .= " WHERE (Dealers.Class = 'T' AND ServiceDealers.Class = 'R') OR Dealers.Class = 'R'";
     } else {
-      $sql .= " WHERE NOT Dealers.Class = 'R'";
+      $sql .= " WHERE (Dealers.Class = 'T' AND ServiceDealers.Class != 'R') OR Dealers.Class NOT IN ('T', 'R')";
     }
 
     // Get ads_prod database connection
     $ads_prod = Database::getConnection('default', 'ads_prod');
 
     // Run the query
-    $result = $ads_prod->query($sql, [':retail' => ($retail ? 1 : 0)]);
+    $result = $ads_prod->query($sql);
 
     $dids = [];
     if ($result) {
@@ -678,6 +688,9 @@ SQL;
     FROM {Drivers}
       INNER JOIN {Dealers} USING(DealerID)
       INNER JOIN {Distributors} USING(DistributorID)
+      INNER JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
     WHERE Distributors.TerritoryID IN (58, 139, 197)
       AND Drivers.DriverID NOT IN (:dids[])
       AND EXISTS (
@@ -690,9 +703,9 @@ SQL;
 SQL;
 
     if ($retail) {
-      $sql .= " AND Dealers.Class = 'R'";
+      $sql .= " AND ServiceDealers.Class = 'R'";
     } else {
-      $sql .= " AND NOT Dealers.Class = 'R'";
+      $sql .= " AND NOT ServiceDealers.Class = 'R'";
     }
 
     // Run the query
@@ -778,10 +791,13 @@ SQL;
 
     $sql = <<<SQL
     SELECT Drivers.DriverID
-      , Dealers.CompanyName AS DealerName
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
     FROM {InventoryACS}
       INNER JOIN {Drivers} USING(DriverID)
       INNER JOIN {Dealers} USING(DealerID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
     WHERE InventoryACS.ShipDate IS NOT NULL
       AND InventoryACS.DriverID IN (:dids[])
 SQL;
@@ -813,10 +829,13 @@ SQL;
       , Drivers.FullName AS DriverName
       , Drivers.LicenseNumber AS DriverLicenseNumber
       , DATE(MAX(BaiidReports.Imported)) AS RemovalDate
-      , Dealers.CompanyName AS DealerName
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
     FROM {Drivers}
       INNER JOIN {BaiidReports} USING(DriverID)
       INNER JOIN {Dealers} USING(DealerID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
     WHERE Drivers.DriverID IN (:dids[])
       AND NOT EXISTS (
         SELECT NULL
@@ -828,7 +847,7 @@ SQL;
     GROUP BY Drivers.DriverID
       , Drivers.FullName
       , Drivers.LicenseNumber
-      , Dealers.CompanyName
+      , DealerName
 SQL;
 
     // Get ads_prod database connection
@@ -859,12 +878,15 @@ SQL;
       , Drivers.LicenseNumber AS DriverLicenseNumber
       , COALESCE(InventoryACS.ShipDate, '') AS ShipDate
       , COALESCE(InventoryACS.SwapDate, '') AS SwapDate
-      , Dealers.CompanyName AS DealerName
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
       , DATE(MAX(BaiidReports.Imported)) AS ServiceDate
     FROM {Drivers}
       INNER JOIN {BaiidReports} USING(DriverID)
       INNER JOIN {Dealers} USING(DealerID)
       INNER JOIN {InventoryACS} USING(DriverID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
     WHERE Drivers.DriverID IN (:dids[])
       AND EXISTS (
         SELECT NULL
@@ -887,7 +909,7 @@ SQL;
       , Drivers.LicenseNumber
       , InventoryACS.ShipDate
       , InventoryACS.SwapDate
-      , Dealers.CompanyName
+      , DealerName
 SQL;
 
     // Get ads_prod database connection
@@ -959,8 +981,8 @@ SQL;
       , Drivers.State AS DriverState
       , Drivers.Zip AS DriverZip
       , Drivers.ProbationEnd AS DriverProbationEnd
-      , Dealers.CompanyName AS DealerName
-      , Dealers.Class AS DealerClass
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDealers.Class, Dealers.Class) AS DealerClass
       , Distributors.Companyname AS DistributorName
       , Territories.Label AS TerritoryName
       , Territories.State AS TerritoryState
@@ -977,6 +999,9 @@ SQL;
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
       INNER JOIN {InventoryACS} USING(DriverID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
       LEFT JOIN {Items} AS HH ON (
         HH.DriverID = Drivers.DriverID
         AND
@@ -1006,8 +1031,8 @@ SQL;
       , Drivers.State
       , Drivers.Zip
       , Drivers.ProbationEnd
-      , Dealers.CompanyName
-      , Dealers.Class
+      , DealerName
+      , DealerClass
       , Distributors.Companyname
       , Territories.Label
       , Territories.State
@@ -1134,7 +1159,6 @@ SQL;
       , InventoryUpgrades.Ignore
     FROM {InventoryUpgrades}
       INNER JOIN {Drivers} USING(DriverID)
-      INNER JOIN {Dealers} USING(DealerID)
 SQL;
 
     // Get ads_prod database connection
@@ -1167,8 +1191,15 @@ SQL;
       INNER JOIN {Dealers} USING(DealerID)
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
     WHERE Territories.State IN ('CA', 'IL', 'IN', 'KS', 'NE', 'OH')
-      AND NOT Dealers.Class = 'R'
+      AND (
+        (Dealers.Class = 'T' AND ServiceDealers.Class != 'R')
+        OR
+        Dealers.Class NOT IN ('T', 'R')
+      )
       AND Drivers.DriverID NOT IN (:dids[])
       AND EXISTS (
         SELECT NULL
@@ -1237,12 +1268,18 @@ SQL;
 
     $sql = <<<SQL
     SELECT Drivers.DriverID
-      , Dealers.CompanyName AS DealerName
-      , Distributors.CompanyName AS DistributorName
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDistributors.CompanyName, Distributors.CompanyName) AS DistributorName
     FROM {InventoryUpgrades}
       INNER JOIN {Drivers} USING(DriverID)
       INNER JOIN {Dealers} USING(DealerID)
       INNER JOIN {Distributors} USING(DistributorID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+      LEFT JOIN {Distributors} AS ServiceDistributors ON (
+        ServiceDistributors.DistributorID = ServiceDealers.DistributorID
+      )
     WHERE InventoryUpgrades.ShipDate IS NOT NULL
       AND InventoryUpgrades.DriverID IN (:dids[])
 SQL;
@@ -1274,14 +1311,20 @@ SQL;
       , Drivers.FullName AS DriverName
       , Drivers.LicenseNumber AS DriverLicenseNumber
       , DATE(MAX(BaiidReports.Imported)) AS RemovalDate
-      , Dealers.CompanyName AS DealerName
-      , Distributors.CompanyName AS DistributorName
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDistributors.CompanyName, Distributors.CompanyName) AS DistributorName
       , Territories.State AS TerritoryState
     FROM {Drivers}
       INNER JOIN {BaiidReports} USING(DriverID)
       INNER JOIN {Dealers} USING(DealerID)
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+      LEFT JOIN {Distributors} AS ServiceDistributors ON (
+        ServiceDistributors.DistributorID = ServiceDealers.DistributorID
+      )
     WHERE Drivers.DriverID IN (:dids[])
       AND NOT EXISTS (
         SELECT NULL
@@ -1296,8 +1339,8 @@ SQL;
     GROUP BY Drivers.DriverID
       , Drivers.FullName
       , Drivers.LicenseNumber
-      , Dealers.CompanyName
-      , Distributors.CompanyName
+      , DealerName
+      , DistributorName
       , Territories.State
 SQL;
 
@@ -1329,8 +1372,8 @@ SQL;
       , Drivers.LicenseNumber AS DriverLicenseNumber
       , COALESCE(InventoryUpgrades.ShipDate, '') AS ShipDate
       , COALESCE(InventoryUpgrades.ComplianceDate, '') AS ComplianceDate
-      , Dealers.CompanyName AS DealerName
-      , Distributors.CompanyName AS DistributorName
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDistributors.CompanyName, Distributors.CompanyName) AS DistributorName
       , Territories.State AS TerritoryState
       , DATE(MAX(BaiidReports.Imported)) AS ServiceDate
     FROM {Drivers}
@@ -1339,6 +1382,12 @@ SQL;
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
       INNER JOIN {InventoryUpgrades} USING(DriverID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+      LEFT JOIN {Distributors} AS ServiceDistributors ON (
+        ServiceDistributors.DistributorID = ServiceDealers.DistributorID
+      )
     WHERE Drivers.DriverID IN (:dids[])
       AND EXISTS (
         SELECT NULL
@@ -1365,8 +1414,8 @@ SQL;
       , Drivers.LicenseNumber
       , InventoryUpgrades.ShipDate
       , InventoryUpgrades.ComplianceDate
-      , Dealers.CompanyName
-      , Distributors.CompanyName
+      , DealerName
+      , DistributorName
       , Territories.State
 SQL;
 
@@ -1417,10 +1466,10 @@ SQL;
       , Drivers.State AS DriverState
       , Drivers.Zip AS DriverZip
       , Drivers.ProbationEnd AS DriverProbationEnd
-      , Dealers.CompanyName AS DealerName
-      , Dealers.State AS DealerState
-      , Dealers.Class AS DealerClass
-      , Distributors.Companyname AS DistributorName
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDealers.State, Dealers.State) AS DealerState
+      , COALESCE(ServiceDealers.Class, Dealers.Class) AS DealerClass
+      , COALESCE(ServiceDistributors.CompanyName, Distributors.CompanyName) AS DistributorName
       , Territories.Label AS TerritoryName
       , Territories.State AS TerritoryState
       , Territories.ConfigServiceDue AS ConfigServiceDue
@@ -1435,6 +1484,12 @@ SQL;
       INNER JOIN {Distributors} USING(DistributorID)
       INNER JOIN {Territories} USING(TerritoryID)
       INNER JOIN {InventoryUpgrades} USING(DriverID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+      LEFT JOIN {Distributors} AS ServiceDistributors ON (
+        ServiceDistributors.DistributorID = ServiceDealers.DistributorID
+      )
       LEFT JOIN {Items} AS HH ON (
         HH.DriverID = Drivers.DriverID
         AND
@@ -1464,10 +1519,10 @@ SQL;
       , Drivers.State
       , Drivers.Zip
       , Drivers.ProbationEnd
-      , Dealers.CompanyName
-      , Dealers.State
-      , Dealers.Class
-      , Distributors.Companyname
+      , DealerName
+      , DealerState
+      , DealerClass
+      , DistributorName
       , Territories.Label
       , Territories.State
       , Territories.ConfigServiceDue
