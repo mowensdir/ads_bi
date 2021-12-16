@@ -1,13 +1,3 @@
-adsbi.drivers:
-  css:
-    theme:
-      css/drivers.css: {}
-adsbi.drivers.customer_reports:
-  js:
-    js/drivers.customer_reports.js: {}
-  dependencies:
-    - core/jquery
-    - adsbi/adsbi.datatables
 adsbi.inventory:
   css:
     theme:
@@ -27,6 +17,26 @@ adsbi.inventory.ks_swaps:
     js/inventory.ks_swaps.js: {}
   dependencies:
     - core/jquery
+adsbi.drivers:
+  css:
+    theme:
+      css/drivers.css: {}
+adsbi.drivers.customer_reports:
+  js:
+    js/drivers.customer_reports.js: {}
+  dependencies:
+    - core/jquery
+    - adsbi/adsbi.datatables
+adsbi.states:
+  css:
+    theme:
+      css/states.css: {}
+adsbi.states.tn_violations:
+  js:
+    js/states.tn_violations.js: {}
+  dependencies:
+    - core/jquery
+    - adsbi/adsbi.datatables
 adsbi.jquery.number:
   js:
     libraries/jquery.number/dist/js/jquery.number.js: {}

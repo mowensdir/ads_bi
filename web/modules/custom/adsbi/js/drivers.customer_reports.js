@@ -75,10 +75,10 @@
       });
 
       $("#searchresults-table tbody").on("click", "tr", function() {
-      var data = resultsTable.row(this).data(),
+        var data = resultsTable.row(this).data(),
           did  = data.DriverID;
-      window.location.href = "/app/drivers/customer-reports/" + did;
-    });
+        window.location.href = "/app/drivers/customer-reports/" + did;
+      });
     }
 
     if (typeof downloadData !== 'undefined') {

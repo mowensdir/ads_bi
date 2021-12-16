@@ -64,6 +64,15 @@ adsbi.drivers.customerreports.driver:
     _title: 'Customer Reports'
   requirements:
     _permission: 'access adsbi'
+adsbi.states.tnviolations:
+  path: '/app/states/tn-violations'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\StatesController::tnViolations'
+    _title: 'TN Violations'
+  requirements:
+    _permission: 'access adsbi'
 adsbi.data.inventory.upgrades.unresolved:
   path: '/data/inventory/upgrades/unresolved'
   options:
@@ -94,6 +103,22 @@ adsbi.data.inventory.upgrades.statebd:
     no_cache: 'TRUE'
   defaults:
     _controller: '\Drupal\adsbi\Controller\InventoryDataController::upgradesStateBD'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.data.states.startcollar:
+  path: '/data/states/startcollar/{did}/{occurred}/{code}'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\StatesDataController::getStartCollar'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.data.states.uptnviolationstatus:
+  path: '/data/states/uptnviolationstatus/{did}/{occurred}/{code}/{status}'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\StatesDataController::updateTNViolationStatus'
   requirements:
     _permission: 'access adsbi'
 adsbi.print.driverreport:

@@ -1,0 +1,107 @@
+{{ attach_library('adsbi/adsbi.states') }}
+{{ attach_library('adsbi/adsbi.states.tn_violations') }}
+
+<div id="states-tnviolations" class="content-wrapper" data-activate="#states-tnviolations-nav">
+  <h1>TN Violations</h1>
+
+  <div id="datatables-wrapper">
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a id="pending-tab" class="nav-link active" data-toggle="tab" href="#pending">Pending</a>
+      </li>
+      <li class="nav-item">
+        <a id="exception-tab" class="nav-link" data-toggle="tab" href="#exceptions">Exceptions</a>
+      </li>
+      <li class="nav-item">
+        <a id="reported-tab" class="nav-link" data-toggle="tab" href="#reported">Reported</a>
+      </li>
+      <li class="nav-item">
+        <a id="ignored-tab" class="nav-link" data-toggle="tab" href="#ignored">Ignored</a>
+      </li>
+    </ul>
+    <div class="tab-content">
+      <div id="pending" class="tab-pane fade show active">
+        <table id="tnviolations-pending" class="table table-striped table-bordered table-hover datatable compact nowrap" style="width:100%">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>DL #</th>
+              <th>Timestamp</th>
+              <th>Violation</th>
+              <th>Status</th>
+              <th>&nbsp;</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div id="exceptions" class="tab-pane fade">
+        <table id="tnviolations-exceptions" class="table table-striped table-bordered table-hover datatable compact nowrap" style="width:100%">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>DL #</th>
+              <th>Timestamp</th>
+              <th>Violation</th>
+              <th>Status</th>
+              <th>Rejected</th>
+              <th>Exception</th>
+              <th>&nbsp;</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div id="reported" class="tab-pane fade">
+        <table id="tnviolations-reported" class="table table-striped table-bordered table-hover datatable compact nowrap" style="width:100%">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>DL #</th>
+              <th>Timestamp</th>
+              <th>Violation</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div id="ignored" class="tab-pane fade">
+        <table id="tnviolations-ignored" class="table table-striped table-bordered table-hover datatable compact nowrap" style="width:100%">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>DL #</th>
+              <th>Timestamp</th>
+              <th>Violation</th>
+              <th>Status</th>
+              <th>&nbsp;</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="reviewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" id="approveBtn" data-did="" data-code="" data-time="">Report to TN</button>
+        <button type="button" class="btn btn-secondary" id="ignoreBtn" data-did="" data-code="" data-time="">Ignore Violation</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var pendingData = JSON.parse('{{ json_pending|replace("'", "&#39;")|raw }}');
+var exceptionsData = JSON.parse('{{ json_exceptions|replace("'", "&#39;")|raw }}');
+var reportedData = JSON.parse('{{ json_reported|replace("'", "&#39;")|raw }}');
+var ignoredData = JSON.parse('{{ json_ignored|replace("'", "&#39;")|raw }}');
+</script>
