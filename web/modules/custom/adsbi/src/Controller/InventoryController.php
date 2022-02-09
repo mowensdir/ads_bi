@@ -148,63 +148,77 @@ class InventoryController extends ControllerBase {
   }
 
   /**
-   *
+   * 
    */
-  private function pivotKSSwapsDealerSummary($data) {
-    $dealerbd = [];
+  public function vmUpdatesRetail() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
 
-    $template = [
-      'dealer'     => '',
-      'drivers'    => 0,
-      'unresolved' => 0,
-      'shipped'    => 0,
-      'resolved'   => 0,
-      'removed'    => 0,
-      'progress'   => '',
+      $context = ['navtabid' => '#inventory-vmupdatesretail-nav'];
+    } else {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--vm_updates.html.twig';
+
+      $data    = InventoryDataController::getVM2022UpdatesRetailData();
+      $context = [
+        'navtabid'         => '#inventory-vmupdatesretail-nav',
+        'title_text'       => 'VM Updates Retail',
+        'slug_text'        => 'VMUpdatesRetail',
+        'total_cases'      => $data['cases'],
+        'shipped'          => count($data['shipped']),
+        'unresolved'       => count($data['unresolved']),
+        'resolved'         => count($data['resolved']),
+        'removed'          => count($data['removed']),
+        'resolved_removed' => count($data['resolved']) + count($data['removed']),
+        'json_unresolved'  => json_encode($data['unresolved']),
+        'json_resolved'    => json_encode($data['resolved']),
+        'json_removed'     => json_encode($data['removed']),
+        'json_statebd'     => json_encode($this->pivotVMUpdatesDealerSummary($data)),
+      ];
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
     ];
+  }
 
-    foreach ($data['unresolved'] as $driver) {
-      $key = $driver['deName'];
-      if (!isset($dealerbd[$key])) {
-        $dealerbd[$key] = $template;
-        $dealerbd[$key]['dealer'] = $key;
-      }
+  /**
+   * 
+   */
+  public function vmUpdatesDistributors() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
 
-      $dealerbd[$key]['drivers']++;
-      $dealerbd[$key]['unresolved']++;
+      $context = ['navtabid' => '#inventory-vmupdatesdistributors-nav'];
+    } else {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--vm_updates.html.twig';
+
+      $data = InventoryDataController::getVM2022UpdatesDistributorData();
+      $context = [
+        'navtabid'         => '#inventory-vmupdatesdistributors-nav',
+        'title_text'       => 'VM Updates Distributors',
+        'slug_text'        => 'VMUpdatesDistributors',
+        'total_cases'      => $data['cases'],
+        'shipped'          => count($data['shipped']),
+        'unresolved'       => count($data['unresolved']),
+        'resolved'         => count($data['resolved']),
+        'removed'          => count($data['removed']),
+        'resolved_removed' => count($data['resolved']) + count($data['removed']),
+        'json_unresolved'  => json_encode($data['unresolved']),
+        'json_resolved'    => json_encode($data['resolved']),
+        'json_removed'     => json_encode($data['removed']),
+        'json_statebd'     => json_encode($this->pivotVMUpdatesDealerSummary($data)),
+      ];
     }
 
-    foreach ($data['resolved'] as $driver) {
-      $key = $driver['DealerName'];
-      if (!isset($dealerbd[$key])) {
-        $dealerbd[$key] = $template;
-        $dealerbd[$key]['dealer'] = $key;
-      }
-
-      $dealerbd[$key]['drivers']++;
-      $dealerbd[$key]['resolved']++;
-    }
-
-    foreach ($data['removed'] as $driver) {
-      $key = $driver['DealerName'];
-      if (!isset($dealerbd[$key])) {
-        $dealerbd[$key] = $template;
-        $dealerbd[$key]['dealer'] = $key;
-      }
-
-      $dealerbd[$key]['drivers']++;
-      $dealerbd[$key]['removed']++;
-    }
-
-    foreach ($data['shipped'] as $driver) {
-      $dealerbd[$driver['DealerName']]['shipped']++;
-    }
-
-    foreach ($dealerbd as $key => $val) {
-      $dealerbd[$key]['progress'] = sprintf("%.2f%%", (($val['resolved'] + $val['removed']) / $val['drivers']) * 100);
-    }
-
-    return array_values($dealerbd);
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
   }
 
   /**
@@ -277,4 +291,125 @@ class InventoryController extends ControllerBase {
 
     return array_values($dealerbd);
   }
+
+  /**
+   *
+   */
+  private function pivotKSSwapsDealerSummary($data) {
+    $dealerbd = [];
+
+    $template = [
+      'dealer'     => '',
+      'drivers'    => 0,
+      'unresolved' => 0,
+      'shipped'    => 0,
+      'resolved'   => 0,
+      'removed'    => 0,
+      'progress'   => '',
+    ];
+
+    foreach ($data['unresolved'] as $driver) {
+      $key = $driver['deName'];
+      if (!isset($dealerbd[$key])) {
+        $dealerbd[$key] = $template;
+        $dealerbd[$key]['dealer'] = $key;
+      }
+
+      $dealerbd[$key]['drivers']++;
+      $dealerbd[$key]['unresolved']++;
+    }
+
+    foreach ($data['resolved'] as $driver) {
+      $key = $driver['DealerName'];
+      if (!isset($dealerbd[$key])) {
+        $dealerbd[$key] = $template;
+        $dealerbd[$key]['dealer'] = $key;
+      }
+
+      $dealerbd[$key]['drivers']++;
+      $dealerbd[$key]['resolved']++;
+    }
+
+    foreach ($data['removed'] as $driver) {
+      $key = $driver['DealerName'];
+      if (!isset($dealerbd[$key])) {
+        $dealerbd[$key] = $template;
+        $dealerbd[$key]['dealer'] = $key;
+      }
+
+      $dealerbd[$key]['drivers']++;
+      $dealerbd[$key]['removed']++;
+    }
+
+    foreach ($data['shipped'] as $driver) {
+      $dealerbd[$driver['DealerName']]['shipped']++;
+    }
+
+    foreach ($dealerbd as $key => $val) {
+      $dealerbd[$key]['progress'] = sprintf("%.2f%%", (($val['resolved'] + $val['removed']) / $val['drivers']) * 100);
+    }
+
+    return array_values($dealerbd);
+  }
+
+  /**
+   *
+   */
+  private function pivotVMUpdatesDealerSummary($data) {
+    $statebd = [];
+
+    $template = [
+      'state'     => '',
+      'drivers'    => 0,
+      'unresolved' => 0,
+      'shipped'    => 0,
+      'resolved'   => 0,
+      'removed'    => 0,
+      'progress'   => '',
+    ];
+
+    foreach ($data['unresolved'] as $driver) {
+      $key = $driver['tState'];
+      if (!isset($statebd[$key])) {
+        $statebd[$key] = $template;
+        $statebd[$key]['state'] = $key;
+      }
+
+      $statebd[$key]['drivers']++;
+      $statebd[$key]['unresolved']++;
+    }
+
+    foreach ($data['resolved'] as $driver) {
+      $key = $driver['TerritoryState'];
+      if (!isset($statebd[$key])) {
+        $statebd[$key] = $template;
+        $statebd[$key]['state'] = $key;
+      }
+
+      $statebd[$key]['drivers']++;
+      $statebd[$key]['resolved']++;
+    }
+
+    foreach ($data['removed'] as $driver) {
+      $key = $driver['TerritoryState'];
+      if (!isset($statebd[$key])) {
+        $statebd[$key] = $template;
+        $statebd[$key]['state'] = $key;
+      }
+
+      $statebd[$key]['drivers']++;
+      $statebd[$key]['removed']++;
+    }
+
+    foreach ($data['shipped'] as $driver) {
+      $statebd[$driver['TerritoryState']]['shipped']++;
+    }
+
+    foreach ($statebd as $key => $val) {
+      $statebd[$key]['progress'] = sprintf("%.2f%%", (($val['resolved'] + $val['removed']) / $val['drivers']) * 100);
+    }
+
+    return array_values($statebd);
+  }
+
 }

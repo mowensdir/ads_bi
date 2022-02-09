@@ -17,6 +17,11 @@ adsbi.inventory.ks_swaps:
     js/inventory.ks_swaps.js: {}
   dependencies:
     - core/jquery
+adsbi.inventory.vm_updates:
+  js:
+    js/inventory.vm_updates.js: {}
+  dependencies:
+    - core/jquery
 adsbi.drivers:
   css:
     theme:

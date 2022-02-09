@@ -41,6 +41,24 @@ adsbi.inventory.ksswapsdistributors:
     _title: 'KS HH Swaps Distributors'
   requirements:
     _permission: 'access adsbi'
+adsbi.inventory.vmupdatesretail:
+  path: '/app/inventory/vm-updates-retail'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::vmUpdatesRetail'
+    _title: 'VM Updates Retail'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.vmupdatesdistributors:
+  path: '/app/inventory/vm-updates-distributors'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::vmUpdatesDistributors'
+    _title: 'VM Updates Distributors'
+  requirements:
+    _permission: 'access adsbi'
 adsbi.drivers.customerreports:
   path: '/app/drivers/customer-reports'
   defaults:

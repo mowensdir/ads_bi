@@ -1147,6 +1147,442 @@ SQL;
   }
 
   /**
+   * 
+   */
+  private function getVM2022UpdatesCases($retail) {
+    // Array to hold return data
+    $cases = [];
+
+    // SQL to retrieve all of the cases currently on our radar
+    $sql = <<<SQL
+    SELECT VM2022Updates.DriverID
+    FROM {VM2022Updates}
+      INNER JOIN {Drivers} USING(DriverID)
+      INNER JOIN {Dealers} USING(DealerID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+SQL;
+
+    if ($retail) {
+      $sql .= " WHERE (Dealers.Class = 'T' AND ServiceDealers.Class = 'R') OR Dealers.Class = 'R'";
+    } else {
+      $sql .= " WHERE (Dealers.Class = 'T' AND ServiceDealers.Class IN ('S', 'W', 'M')) OR Dealers.Class IN ('S', 'W', 'M')";
+    }
+
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Run the query
+    $result = $ads_prod->query($sql);
+
+    if ($result) {
+      while ($row = $result->fetchAssoc()) {
+        $cases[] = intval($row['DriverID']);
+      }
+    }
+
+    return $cases;
+  }
+
+  /**
+   * 
+   */
+  private function getVM2022UpdatesData($cases) {
+    $numCases = count($cases);
+
+    $shipped = self::getVM2022UpdatesShipped($cases);
+
+    $removed = self::getVM2022UpdatesRemoved($cases);
+
+    $resolved = self::getVM2022UpdatesResolved($cases);
+
+    $openCases = [];
+    for ($i = 0; $i < $numCases; $i++) {
+      if (!in_array($cases[$i], array_keys($removed)) && !in_array($cases[$i], array_keys($resolved))) {
+        $openCases[] = $cases[$i];
+      }
+    }
+
+    $unresolved = self::getVM2022UpdatesUnresolved($openCases);
+
+    return [
+      'cases'      => $numCases,
+      'shipped'    => $shipped,
+      'unresolved' => $unresolved,
+      'resolved'   => array_values($resolved),
+      'removed'    => array_values($removed),
+    ];
+  }
+
+  /**
+   * 
+   */
+  private function getVM2022UpdatesShipped($cases) {
+    // Array to hold return data
+    $shipped = [];
+
+    $sql = <<<SQL
+    SELECT Drivers.DriverID
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , Territories.State AS TerritoryState
+    FROM {VM2022Updates}
+      INNER JOIN {Drivers} USING(DriverID)
+      INNER JOIN {Dealers} USING(DealerID)
+      INNER JOIN {Distributors} USING(DistributorID)
+      INNER JOIN {Territories} USING(TerritoryID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+    WHERE VM2022Updates.ShipDate IS NOT NULL
+      AND VM2022Updates.DriverID IN (:dids[])
+SQL;
+
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Run the query
+    $result = $ads_prod->query(trim($sql), [':dids[]' => $cases]);
+
+    if ($result) {
+      while ($row = $result->fetchAssoc()) {
+        $shipped[] = $row;
+      }
+    }
+
+    return $shipped;
+  }
+
+  /**
+   * 
+   */
+  private function getVM2022UpdatesRemoved($cases) {
+    // Array to hold return data
+    $removed = [];
+
+    $sql = <<<SQL
+    SELECT Drivers.DriverID
+      , Drivers.FullName AS DriverName
+      , Drivers.LicenseNumber AS DriverLicenseNumber
+      , Territories.State AS TerritoryState
+      , DATE(MAX(BaiidReports.Imported)) AS RemovalDate
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+    FROM {Drivers}
+      INNER JOIN {BaiidReports} USING(DriverID)
+      INNER JOIN {Dealers} USING(DealerID)
+      INNER JOIN {Distributors} USING(DistributorID)
+      INNER JOIN {Territories} USING(TerritoryID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+    WHERE Drivers.DriverID IN (:dids[])
+      AND NOT EXISTS (
+        SELECT NULL
+        FROM {Items}
+        WHERE Items.DriverID = Drivers.DriverID
+          AND Items.ProductID = 2
+          AND Items.SerialNumber LIKE 'VM-%'
+      )
+    GROUP BY Drivers.DriverID
+      , Drivers.FullName
+      , Drivers.LicenseNumber
+      , Territories.State
+      , DealerName
+SQL;
+
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Run the query
+    $result = $ads_prod->query(trim($sql), [':dids[]' => $cases]);
+
+    if ($result) {
+      while ($row = $result->fetchAssoc()) {
+        $removed[$row['DriverID']] = $row;
+      }
+    }
+
+    return $removed;
+  }
+
+  /**
+   * 
+   */
+  private function getVM2022UpdatesResolved($cases) {
+    // Array to hold return data
+    $resolved = [];
+
+    $sql = <<<SQL
+    SELECT Drivers.DriverID
+      , Drivers.FullName AS DriverName
+      , Drivers.LicenseNumber AS DriverLicenseNumber
+      , Territories.State AS TerritoryState
+      , COALESCE(VM2022Updates.ShipDate, '') AS ShipDate
+      , COALESCE(VM2022Updates.ComplianceDate, '') AS ComplianceDate
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , DATE(MAX(BaiidReports.Imported)) AS ServiceDate
+    FROM {Drivers}
+      INNER JOIN {BaiidReports} USING(DriverID)
+      INNER JOIN {Dealers} USING(DealerID)
+      INNER JOIN {Distributors} USING(DistributorID)
+      INNER JOIN {Territories} USING(TerritoryID)
+      INNER JOIN {VM2022Updates} USING(DriverID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+    WHERE Drivers.DriverID IN (:dids[])
+      AND EXISTS (
+        SELECT NULL
+        FROM {Items}
+        WHERE Items.DriverID = Drivers.DriverID
+          AND Items.ProductID = 2
+          AND Items.SerialNumber LIKE 'VM-%'
+          AND Items.VM2022 = 1
+      )
+      AND NOT EXISTS (
+        SELECT NULL
+        FROM {Items}
+        WHERE Items.DriverID = Drivers.DriverID
+          AND Items.ProductID = 2
+          AND Items.SerialNumber LIKE 'VM-%'
+          AND (Items.VM2022 = 0 OR Items.VM2022 IS NULL)
+      )
+    GROUP BY Drivers.DriverID
+      , Drivers.FullName
+      , Drivers.LicenseNumber
+      , Territories.State
+      , VM2022Updates.ShipDate
+      , VM2022Updates.ComplianceDate
+      , DealerName
+SQL;
+
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Run the query
+    $result = $ads_prod->query(trim($sql), [':dids[]' => $cases]);
+
+    if ($result) {
+      while ($row = $result->fetchAssoc()) {
+        if (empty($row['ComplianceDate'])) {
+          $ads_prod->update('VM2022Updates')
+            ->fields(['ComplianceDate' => $row['ServiceDate']])
+            ->condition('DriverID', $row['DriverID'])
+            ->execute();
+
+          $row['ComplianceDate'] = $row['ServiceDate'];
+        }
+
+        $resolved[$row['DriverID']] = $row;
+      }
+    }
+
+    return $resolved;
+  }
+
+  /**
+   * 
+   */
+  private function getVM2022UpdatesUnresolved($cases) {
+    // Array to hold device map
+    $sn2VM2022 = [];
+    $sql = <<<SQL
+    SELECT DISTINCT Items.SerialNumber
+      , COALESCE(Items.VM2022, 0) AS VM2022
+    FROM {Items}
+    WHERE Items.ProductID = 2
+      AND Items.SerialNumber LIKE 'VM-%'
+      AND Items.DriverID IN (:dids[])
+SQL;
+
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Run the query
+    $result = $ads_prod->query(trim($sql), [':dids[]' => $cases]);
+
+    if ($result) {
+      while ($row = $result->fetchAssoc()) {
+        $sn2VM2022[$row['SerialNumber']] = $row['VM2022'];
+      }
+    }
+
+    // Array to hold return data
+    $unresolved = [];
+
+    $sql = <<<SQL
+    SELECT Drivers.DriverID
+      , Drivers.FullName AS DriverName
+      , Drivers.LicenseNumber AS DriverLicenseNumber
+      , Drivers.LicenseJurisdiction AS DriverLicenseState
+      , Drivers.BirthDate AS DriverDOB
+      , Drivers.Phone AS DriverPhone1
+      , Drivers.Fax AS DriverPhone2
+      , Drivers.Email AS DriverEmail
+      , Drivers.Address1 AS DriverAddress1
+      , Drivers.Address2 AS DriverAddress2
+      , Drivers.City AS DriverCity
+      , Drivers.State AS DriverState
+      , Drivers.Zip AS DriverZip
+      , Drivers.ProbationEnd AS DriverProbationEnd
+      , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , COALESCE(ServiceDealers.Class, Dealers.Class) AS DealerClass
+      , Distributors.Companyname AS DistributorName
+      , Territories.Label AS TerritoryName
+      , Territories.State AS TerritoryState
+      , Territories.ConfigServiceDue AS ConfigServiceDue
+      , COALESCE(VM2022Updates.ShipDate, '') AS ShipDate
+      , COALESCE(VM2022Updates.ComplianceDate, '') AS ComplianceDate
+      , COALESCE(GROUP_CONCAT(DISTINCT VM.SerialNumber ORDER BY VM.SerialNumber ASC SEPARATOR ', '), 'N/A') AS VMSN
+      , (SELECT DATE(MIN(Imported)) FROM {BaiidReports} WHERE DriverID = Drivers.DriverID) AS InstallDate
+      , COALESCE((SELECT DATE(MAX(Imported)) FROM {BaiidReports} WHERE DriverID = Drivers.DriverID AND Type = 'Details'), 'N/A') AS LastDownload
+      , COALESCE((SELECT SerialNumber FROM {BaiidReports} WHERE DriverID = Drivers.DriverID AND Type = 'Details' ORDER BY Imported DESC LIMIT 1), 'N/A') AS LastEquipment
+        FROM {Drivers}
+      INNER JOIN {Dealers} USING(DealerID)
+      INNER JOIN {Distributors} USING(DistributorID)
+      INNER JOIN {Territories} USING(TerritoryID)
+      INNER JOIN {VM2022Updates} USING(DriverID)
+      LEFT JOIN {Dealers} AS ServiceDealers ON (
+        ServiceDealers.DealerID = Drivers.ServiceDealerID
+      )
+      LEFT JOIN {Items} AS VM ON (
+        VM.DriverID = Drivers.DriverID
+        AND
+        VM.ProductID = 2
+        AND
+        VM.SerialNumber LIKE 'VM-%'
+      )
+    WHERE Drivers.DriverID IN (:dids[])
+    GROUP BY Drivers.DriverID
+      , Drivers.FullName
+      , Drivers.LicenseNumber
+      , Drivers.LicenseJurisdiction
+      , Drivers.BirthDate
+      , Drivers.Phone
+      , Drivers.Fax
+      , Drivers.Email
+      , Drivers.Address1
+      , Drivers.Address2
+      , Drivers.City
+      , Drivers.State
+      , Drivers.Zip
+      , Drivers.ProbationEnd
+      , DealerName
+      , DealerClass
+      , Distributors.Companyname
+      , Territories.Label
+      , Territories.State
+      , Territories.ConfigServiceDue
+      , VM2022Updates.ShipDate
+      , VM2022Updates.ComplianceDate
+SQL;
+
+    // Run the query
+    $result = $ads_prod->query(trim($sql), [':dids[]' => $cases]);
+
+    if ($result) {
+      while ($row = $result->fetchAssoc()) {
+        $item = [
+          'id'          => $row['DriverID'],
+          'drName'      => $row['DriverName'],
+          'drDLN'       => $row['DriverLicenseNumber'],
+          'drEmail'     => $row['DriverEmail'],
+          'drPhone'     => $row['DriverPhone1'],
+          'tName'       => $row['TerritoryName'],
+          'tState'      => $row['TerritoryState'],
+          'deName'      => $row['DealerName'],
+          'install'     => $row['InstallDate'],
+          'shipped'     => $row['ShipDate'],
+          'vmsn'        => '',
+          'lastVM'      => '',
+        ];
+
+        if (!empty($row['ComplianceDate'])) {
+          $ads_prod->update('VM2022Updates')
+            ->fields(['ComplianceDate' => null])
+            ->condition('DriverID', $row['DriverID'])
+            ->execute();
+        }
+
+        // Populate last service columns
+        if ('N/A' === $row['LastDownload']) {
+          $item['lastService'] = $row['InstallDate'];
+        } else {
+          $item['lastService'] = $row['LastDownload'];
+          foreach (explode(' ', trim($row['LastEquipment'])) as $piece) {
+            if ('VM' === substr($piece, 0, 2)) {
+              $item['lastVM'] = $piece;
+            }
+          }
+        }
+
+        // Get days since last service
+        $item['daysSince'] = floor((time() - strtotime($item['lastService'])) / 60 / 60 / 24);
+
+        // Compute Next Service Date
+        if ('KS' === $row['TerritoryState']) {
+          if ('2020-08-22' > $item['lastService']) {
+            $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 90));
+          } else {
+            $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 30));
+          }
+        } elseif ('IL' === $row['TerritoryState']) {
+          if ('2020-08-28' > $item['lastService']) {
+            $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 90));
+          } else {
+            $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 60));
+          }
+        } else {
+          $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * intval($row['ConfigServiceDue'])));
+        }
+
+        // Determine VM compliance
+        $cVM  = false;
+        $ncVM = false;
+        $vmsn = [];
+        foreach (explode(', ', $row['VMSN']) as $sn) {
+          $acs = null;
+          if (isset($sn2VM2022[$sn])) {
+            $vm2022 = $sn2VM2022[$sn];
+          } else {
+            $query = $ads_prod->query('SELECT VM2022 FROM {Items} WHERE SerialNumber = :sn', [':sn' => $sn]);
+            if ($query) {
+              $r = $query->fetchAssoc();
+              $vm2022 = $r['VM2022'];
+            }
+          }
+
+          if (1 == $vm2022) {
+            $cVM = true;
+            $vmsn[] = sprintf('%s (Y)', $sn);
+          } elseif (0 == $vm2022) {
+            $ncvm = true;
+            $vmsn[] = sprintf('%s (N)', $sn);
+          } else {
+            $vmsn[] = $sn;
+          }
+        }
+
+        $item['vmsn'] = implode(', ', $vmsn);
+
+        if ($cVM && $ncVM) {
+          $item['statusVM'] = 'P';
+        } elseif ($ncVM) {
+          $item['statusVM'] = 'N';
+        } elseif ($cVM) {
+          $item['statusVM'] = 'C';
+        } else {
+          $item['statusVM'] = '';
+        }
+
+        $unresolved[] = $item;
+      }
+    }
+
+    return $unresolved;
+  }
+
+  /**
    *
    */
   private function getDistributorUpgradeCases() {
@@ -1733,6 +2169,24 @@ SQL;
     $cases = self::getKSSwapCases($retail = false);
 
     return self::getKSSwapsData($cases);
+  }
+
+  /**
+   *
+   */
+  public static function getVM2022UpdatesRetailData() {
+    $cases = self::getVM2022UpdatesCases($retail = true);
+
+    return self::getVM2022UpdatesData($cases);
+  }
+
+  /**
+   *
+   */
+  public static function getVM2022UpdatesDistributorData() {
+    $cases = self::getVM2022UpdatesCases($retail = false);
+
+    return self::getVM2022UpdatesData($cases);
   }
 
   /**
