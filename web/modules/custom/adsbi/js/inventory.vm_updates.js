@@ -29,51 +29,55 @@
           "className": "cell-last-service"
         },
         { // 4
-          "data": "daysSince",
-          "className": "cell-days-since"
+          "data": "svcDue",
+          "className": "cell-svc-due"
         },
         { // 5
+          "data": "daysLate",
+          "className": "cell-days-late"
+        },
+        { // 6
           "data": "shipped",
           "className": "cell-shipped"
         },
-        { // 6
+        { // 7
           "data": "nextService",
           "className": "cell-next-service"
         },
-        { // 7
+        { // 8
           "data": "tState",
           "className": "cell-state"
         },
-        { // 8
+        { // 9
           "data": "deName",
           "className": "cell-service-center"
         },
-        { // 9
+        { // 10
           "data": "drDLN",
           "title": "Driver License Number",
           "visible": false,
           "searchable": false
         },
-        { // 10
+        { // 11
           "data": "drPhone",
           "title": "Driver Phone",
           "visible": false,
           "searchable": false
         },
-        { // 11
+        { // 12
           "data": "drEmail",
           "title": "Driver Email",
           "visible": false,
           "searchable": false
         },
-        { // 12
+        { // 13
           "data": "install",
           "title": "Install Date",
           "visible": false,
           "searchable": false
         },
       ],
-      "order": [[4, "asc"]],
+      "order": [[7, "asc"]],
       "dom": "Bfrti",
       "buttons": [
         {
@@ -84,7 +88,7 @@
           "messageTop": null,
           "title": null,
           "exportOptions": {
-            "columns": [0, 1, 9, 2, 10, 11, 8, 12, 5, 3, 6]
+            "columns": [0, 1, 10, 2, 11, 12, 9, 13, 6, 3, 4, 7]
           }
         }
       ],

@@ -1523,18 +1523,26 @@ SQL;
         if ('KS' === $row['TerritoryState']) {
           if ('2020-08-22' > $item['lastService']) {
             $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 90));
+            $item['svcDue']      = 90;
           } else {
             $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 30));
+            $item['svcDue']      = 30;
           }
         } elseif ('IL' === $row['TerritoryState']) {
           if ('2020-08-28' > $item['lastService']) {
             $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 90));
+            $item['svcDue']      = 90;
           } else {
             $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * 60));
+            $item['svcDue']      = 60;
           }
         } else {
           $item['nextService'] = date('Y-m-d', strtotime($item['lastService']) + (86400 * intval($row['ConfigServiceDue'])));
+          $item['svcDue']      = intval($row['ConfigServiceDue']);
         }
+
+        // Get days past due
+        $item['daysLate'] = max(floor((time() - strtotime($item['nextService'])) / 60 / 60 / 24), 0);
 
         // Determine VM compliance
         $cVM  = false;
