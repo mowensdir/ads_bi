@@ -173,7 +173,7 @@ class InventoryController extends ControllerBase {
         'json_unresolved'  => json_encode($data['unresolved']),
         'json_resolved'    => json_encode($data['resolved']),
         'json_removed'     => json_encode($data['removed']),
-        'json_statebd'     => json_encode($this->pivotVMUpdatesDealerSummary($data)),
+        'json_statebd'     => json_encode($this->pivotVMUpdatesStateSummary($data)),
       ];
     }
 
@@ -194,7 +194,7 @@ class InventoryController extends ControllerBase {
 
       $context = ['navtabid' => '#inventory-vmupdatesdistributors-nav'];
     } else {
-      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--vm_updates.html.twig';
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--vm_updates--distributor.html.twig';
 
       $data = InventoryDataController::getVM2022UpdatesDistributorData();
       $context = [
@@ -210,7 +210,84 @@ class InventoryController extends ControllerBase {
         'json_unresolved'  => json_encode($data['unresolved']),
         'json_resolved'    => json_encode($data['resolved']),
         'json_removed'     => json_encode($data['removed']),
-        'json_statebd'     => json_encode($this->pivotVMUpdatesDealerSummary($data)),
+        'json_statebd'     => json_encode($this->pivotVMUpdatesStateSummary($data)),
+        'json_distrobd'    => json_encode($this->pivotVMUpdatesDistributorSummary($data)),
+      ];
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
+   * 
+   */
+  public function batchShipDate() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-batchshipdate-nav'];
+    } else {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--batch_ship_date.html.twig';
+
+      $context = [];
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
+   * 
+   */
+  public function batchShipDateReview() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-batchshipdate-nav'];
+    } else {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--batch_ship_date--review.html.twig';
+
+      $target = \Drupal::request()->request->get('target');
+      $data   = \Drupal::request()->request->get('data');
+      $lines  = explode("\n", trim($data));
+
+      $rows = [];
+      foreach ($lines as $line) {
+        $cols = explode("\t", trim($line));
+
+        if (count($cols) < 2) {
+          continue;
+        }
+
+        $rows[] = [intval($cols[0]), $cols[1]];
+      }
+
+      if ('inventoryCompliance' === $target) {
+        $dataset = 'Inventory Upgrades';
+        $review  = InventoryDataController::getInventoryUpgradesReview($rows);
+      } elseif ('inventoryACS' === $target) {
+        $dataset = 'KS HH Swaps';
+        $review  = InventoryDataController::getKSHHSwapsReview($rows);
+      } elseif ('vm2022Updates' === $target) {
+        $dataset = 'VM Updates';
+        $review  = InventoryDataController::getVMUpdatesReview($rows);
+      } else {
+        $dataset = '';
+        $review  = [];
+      }
+
+      $context = [
+        'dataset'     => $dataset,
+        'json_review' => json_encode($review),
       ];
     }
 
@@ -355,7 +432,7 @@ class InventoryController extends ControllerBase {
   /**
    *
    */
-  private function pivotVMUpdatesDealerSummary($data) {
+  private function pivotVMUpdatesStateSummary($data) {
     $statebd = [];
 
     $template = [
@@ -410,6 +487,66 @@ class InventoryController extends ControllerBase {
     }
 
     return array_values($statebd);
+  }
+
+  /**
+   *
+   */
+  private function pivotVMUpdatesDistributorSummary($data) {
+    $distrobd = [];
+
+    $template = [
+      'state'     => '',
+      'drivers'    => 0,
+      'unresolved' => 0,
+      'shipped'    => 0,
+      'resolved'   => 0,
+      'removed'    => 0,
+      'progress'   => '',
+    ];
+
+    foreach ($data['unresolved'] as $driver) {
+      $key = $driver['diName'];
+      if (!isset($distrobd[$key])) {
+        $distrobd[$key] = $template;
+        $distrobd[$key]['distro'] = $key;
+      }
+
+      $distrobd[$key]['drivers']++;
+      $distrobd[$key]['unresolved']++;
+    }
+
+    foreach ($data['resolved'] as $driver) {
+      $key = $driver['DistributorName'];
+      if (!isset($distrobd[$key])) {
+        $distrobd[$key] = $template;
+        $distrobd[$key]['distro'] = $key;
+      }
+
+      $distrobd[$key]['drivers']++;
+      $distrobd[$key]['resolved']++;
+    }
+
+    foreach ($data['removed'] as $driver) {
+      $key = $driver['DistributorName'];
+      if (!isset($distrobd[$key])) {
+        $distrobd[$key] = $template;
+        $distrobd[$key]['distro'] = $key;
+      }
+
+      $distrobd[$key]['drivers']++;
+      $distrobd[$key]['removed']++;
+    }
+
+    foreach ($data['shipped'] as $driver) {
+      $distrobd[$driver['DistributorName']]['shipped']++;
+    }
+
+    foreach ($distrobd as $key => $val) {
+      $distrobd[$key]['progress'] = sprintf("%.2f%%", (($val['resolved'] + $val['removed']) / $val['drivers']) * 100);
+    }
+
+    return array_values($distrobd);
   }
 
 }

@@ -22,6 +22,11 @@ adsbi.inventory.vm_updates:
     js/inventory.vm_updates.js: {}
   dependencies:
     - core/jquery
+adsbi.inventory.vm_updates.distributor:
+  js:
+    js/inventory.vm_updates.distributor.js: {}
+  dependencies:
+    - core/jquery
 adsbi.drivers:
   css:
     theme:

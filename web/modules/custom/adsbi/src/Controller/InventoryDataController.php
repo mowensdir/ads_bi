@@ -1225,6 +1225,7 @@ SQL;
     $sql = <<<SQL
     SELECT Drivers.DriverID
       , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , Distributors.Companyname AS DistributorName
       , Territories.State AS TerritoryState
     FROM {VM2022Updates}
       INNER JOIN {Drivers} USING(DriverID)
@@ -1267,6 +1268,7 @@ SQL;
       , Territories.State AS TerritoryState
       , DATE(MAX(BaiidReports.Imported)) AS RemovalDate
       , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , Distributors.Companyname AS DistributorName
     FROM {Drivers}
       INNER JOIN {BaiidReports} USING(DriverID)
       INNER JOIN {Dealers} USING(DealerID)
@@ -1288,6 +1290,7 @@ SQL;
       , Drivers.LicenseNumber
       , Territories.State
       , DealerName
+      , Distributors.Companyname
 SQL;
 
     // Get ads_prod database connection
@@ -1320,6 +1323,7 @@ SQL;
       , COALESCE(VM2022Updates.ShipDate, '') AS ShipDate
       , COALESCE(VM2022Updates.ComplianceDate, '') AS ComplianceDate
       , COALESCE(ServiceDealers.CompanyName, Dealers.CompanyName) AS DealerName
+      , Distributors.Companyname AS DistributorName
       , DATE(MAX(BaiidReports.Imported)) AS ServiceDate
     FROM {Drivers}
       INNER JOIN {BaiidReports} USING(DriverID)
@@ -1354,6 +1358,7 @@ SQL;
       , VM2022Updates.ShipDate
       , VM2022Updates.ComplianceDate
       , DealerName
+      , Distributors.Companyname
 SQL;
 
     // Get ads_prod database connection
@@ -1491,6 +1496,7 @@ SQL;
           'tName'       => $row['TerritoryName'],
           'tState'      => $row['TerritoryState'],
           'deName'      => $row['DealerName'],
+          'diName'      => $row['DistributorName'],
           'install'     => $row['InstallDate'],
           'shipped'     => $row['ShipDate'],
           'vmsn'        => '',
@@ -2114,6 +2120,90 @@ SQL;
     return $data;
   }
 
+  /**
+   * 
+   */
+  private function getBatchShipDateReview($rows, $table) {
+    // Array to hold return data
+    $review = [];
+
+    foreach ($rows as $row) {
+      $did  = $row[0];
+      $date = $row[1];
+
+      $current = self::getInventoryShipDateRecord($table, $did);
+
+      if (false === $current) {
+        $review[] = [
+          'DriverID' => $did,
+          'ShipDate' => '',
+          'Message'  => 'Driver not found in target dataset',
+          'status'   => 'danger'
+        ];
+        continue;
+      }
+
+      $dp = date_parse($date);
+      if ((false === $dp) || $dp['warning_count'] || $dp['error_count'] || empty($dp['year']) || empty($dp['month']) || empty($dp['day'])) {
+        $review[] = [
+          'DriverID' => $did,
+          'ShipDate' => '',
+          'Message'  => sprintf('Invalid Ship Date value: %s', $date),
+          'status'   => 'danger'
+        ];
+        continue;
+      } else {
+        $shipDate = sprintf('%s-%s-%s', $dp['year'], str_pad($dp['month'], 2, '0', STR_PAD_LEFT), str_pad($dp['day'], 2, '0', STR_PAD_LEFT));
+      }
+
+      if (empty($current['ShipDate'])) {
+        $review[] = [
+          'DriverID' => $did,
+          'ShipDate' => $shipDate,
+          'Message'  => '',
+          'status'   => ''
+        ];
+      } elseif ($current['ShipDate'] === $shipDate) {
+        $review[] = [
+          'DriverID' => $did,
+          'ShipDate' => $shipDate,
+          'Message'  => sprintf('Ship Date already set to %s', $shipDate),
+          'status'   => 'info'
+        ];
+      } else {
+        $review[] = [
+          'DriverID' => $did,
+          'ShipDate' => $shipDate,
+          'Message'  => sprintf('Updating Ship Date from %s to %s', $current['ShipDate'], $shipDate),
+          'status'   => 'warning'
+        ];
+      }
+    }
+
+    return $review;
+  }
+
+  /**
+   * 
+   */
+  private function getInventoryShipDateRecord($table, $did) {
+    // Dynamic SQL to get Ship Date record
+    $sql = sprintf('SELECT %s.DriverID, %s.ShipDate FROM {%s} WHERE %s.DriverID = :did', $table, $table, $table, $table);
+
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+
+    // Run the query
+    $result = $ads_prod->query($sql, [':did' => $did]);
+
+    if ($result) {
+      return $result->fetchAssoc();
+    } else {
+      return FALSE;
+    }
+  }
+
 
 
 /* ================================================================
@@ -2244,6 +2334,33 @@ SQL;
       'nchh'       => $nchh,
       'ncvm'       => $ncvm,
     ];
+  }
+
+  /**
+   * 
+   */
+  public static function getInventoryUpgradesReview($rows) {
+    $table = 'InventoryACS';
+
+    return self::getBatchShipDateReview($rows, $table);
+  }
+
+  /**
+   * 
+   */
+  public static function getKSHHSwapsReview($rows) {
+    $table = 'InventoryCompliance';
+
+    return self::getBatchShipDateReview($rows, $table);
+  }
+
+  /**
+   * 
+   */
+  public static function getVMUpdatesReview($rows) {
+    $table = 'VM2022Updates';
+
+    return self::getBatchShipDateReview($rows, $table);
   }
 
 
