@@ -211,7 +211,7 @@ class InventoryController extends ControllerBase {
         'json_resolved'    => json_encode($data['resolved']),
         'json_removed'     => json_encode($data['removed']),
         'json_statebd'     => json_encode($this->pivotVMUpdatesStateSummary($data)),
-        'json_distrobd'    => json_encode($this->pivotVMUpdatesDistributorSummary($data)),
+        'json_dealerbd'    => json_encode($this->pivotVMUpdatesDealerSummary($data)),
       ];
     }
 
@@ -492,11 +492,11 @@ class InventoryController extends ControllerBase {
   /**
    *
    */
-  private function pivotVMUpdatesDistributorSummary($data) {
-    $distrobd = [];
+  private function pivotVMUpdatesDealerSummary($data) {
+    $dealerbd = [];
 
     $template = [
-      'state'     => '',
+      'dealer'     => '',
       'drivers'    => 0,
       'unresolved' => 0,
       'shipped'    => 0,
@@ -506,47 +506,47 @@ class InventoryController extends ControllerBase {
     ];
 
     foreach ($data['unresolved'] as $driver) {
-      $key = $driver['diName'];
-      if (!isset($distrobd[$key])) {
-        $distrobd[$key] = $template;
-        $distrobd[$key]['distro'] = $key;
+      $key = $driver['deName'];
+      if (!isset($dealerbd[$key])) {
+        $dealerbd[$key] = $template;
+        $dealerbd[$key]['dealer'] = $key;
       }
 
-      $distrobd[$key]['drivers']++;
-      $distrobd[$key]['unresolved']++;
+      $dealerbd[$key]['drivers']++;
+      $dealerbd[$key]['unresolved']++;
     }
 
     foreach ($data['resolved'] as $driver) {
-      $key = $driver['DistributorName'];
-      if (!isset($distrobd[$key])) {
-        $distrobd[$key] = $template;
-        $distrobd[$key]['distro'] = $key;
+      $key = $driver['DealerName'];
+      if (!isset($dealerbd[$key])) {
+        $dealerbd[$key] = $template;
+        $dealerbd[$key]['dealer'] = $key;
       }
 
-      $distrobd[$key]['drivers']++;
-      $distrobd[$key]['resolved']++;
+      $dealerbd[$key]['drivers']++;
+      $dealerbd[$key]['resolved']++;
     }
 
     foreach ($data['removed'] as $driver) {
-      $key = $driver['DistributorName'];
-      if (!isset($distrobd[$key])) {
-        $distrobd[$key] = $template;
-        $distrobd[$key]['distro'] = $key;
+      $key = $driver['DealerName'];
+      if (!isset($dealerbd[$key])) {
+        $dealerbd[$key] = $template;
+        $dealerbd[$key]['dealer'] = $key;
       }
 
-      $distrobd[$key]['drivers']++;
-      $distrobd[$key]['removed']++;
+      $dealerbd[$key]['drivers']++;
+      $dealerbd[$key]['removed']++;
     }
 
     foreach ($data['shipped'] as $driver) {
-      $distrobd[$driver['DistributorName']]['shipped']++;
+      $dealerbd[$driver['DealerName']]['shipped']++;
     }
 
-    foreach ($distrobd as $key => $val) {
-      $distrobd[$key]['progress'] = sprintf("%.2f%%", (($val['resolved'] + $val['removed']) / $val['drivers']) * 100);
+    foreach ($dealerbd as $key => $val) {
+      $dealerbd[$key]['progress'] = sprintf("%.2f%%", (($val['resolved'] + $val['removed']) / $val['drivers']) * 100);
     }
 
-    return array_values($distrobd);
+    return array_values($dealerbd);
   }
 
 }

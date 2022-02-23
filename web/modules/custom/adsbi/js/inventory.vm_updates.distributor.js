@@ -3,11 +3,11 @@
     var resolvedRendered = false,
         removedRendered  = false,
         statebdRendered  = false,
-        distrobdRendered = false,
+        dealerbdRendered = false,
         resolvedTable    = null,
         removedTable     = null,
         statebdTable     = null,
-        distrobdTable    = null;
+        dealerbdTable    = null;
 
     var unresolvedTable = $("#unresolved-table").DataTable({
       "data": unresolvedData,
@@ -206,13 +206,13 @@
           }
         });
         statebdRendered  = true;
-      } else if ('#distrobd' === $(e.target).attr('href') && !distrobdRendered) {
-        distrobdTable = $("#distrobd-table").DataTable({
-          "data": distrobdData,
+      } else if ('#dealerbd' === $(e.target).attr('href') && !dealerbdRendered) {
+        dealerbdTable = $("#dealerbd-table").DataTable({
+          "data": dealerbdData,
           "scrollY": 600,
           "scroller": true,
           "columns": [
-            {"data": "distro"},
+            {"data": "dealer"},
             {"data": "drivers"},
             {"data": "unresolved"},
             {"data": "shipped"},
@@ -227,7 +227,7 @@
               "extend": "excel",
               "className": "btn-warning",
               "text": "<i class='far fa-file-excel mr-2'></i> Excel",
-              "filename": slug+'DistributorBreakdown',
+              "filename": slug+'DealerBreakdown',
               "messageTop": null,
               "title": null,
             }
@@ -236,7 +236,7 @@
             "emptyTable": "No data to display"
           }
         });
-        distrobdRendered  = true;
+        dealerbdRendered  = true;
       }
     });
   });
