@@ -29,7 +29,9 @@
         "drupal/smtp": "^1.0@RC",
         "drupal/token": "^1.7",
         "drupal/twig_tweak": "^2.6",
+        "drupal/upgrade_status": "^3.14",
         "drush/drush": "^10.3",
+        "ifsnop/mysqldump-php": "^2.9",
         "mikehaertl/phpwkhtmltopdf": "^2.4"
     },
     "conflict": {
@@ -102,5 +104,8 @@
         "post-update-cmd": [
             "cp -R vendor/twbs/bootstrap/dist web/libraries/bootstrap"
         ]
+    },
+    "require-dev": {
+        "drupal/core-dev": "8.9.20"
     }
 }
