@@ -90,7 +90,7 @@
           "messageTop": null,
           "title": null,
           "exportOptions": {
-            "columns": [0, 1, 10, 2, 11, 12, 9, 13, 6, 3, 4, 7]
+            "columns": [0, 1, 10, 2, 11, 12, 8, 9, 13, 6, 3, 4, 7]
           }
         }
       ],
@@ -213,6 +213,7 @@
           "scroller": true,
           "columns": [
             {"data": "dealer"},
+            {"data": "state"},
             {"data": "drivers"},
             {"data": "unresolved"},
             {"data": "shipped"},
