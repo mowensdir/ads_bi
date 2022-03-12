@@ -92,7 +92,7 @@ class DriversController extends ControllerBase {
    *
    */
   public function printDriverReport(int $rid) {
-    $tz = new \DateTimeZone(drupal_get_user_timezone());
+    $tz = new \DateTimeZone(date_default_timezone_get());
     $dt = new \DateTime();
     $dt->setTimestamp($_SERVER['REQUEST_TIME']);
     $dt->setTimezone($tz);

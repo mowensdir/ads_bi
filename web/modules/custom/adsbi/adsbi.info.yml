@@ -1,6 +1,5 @@
+type: module
 name: ADS BI
 description: Provides the custom ADS BI application functionality
 package: Custom
-
-type: module
-core: 8.x
+core_version_requirement: ^8.8 || ^9
