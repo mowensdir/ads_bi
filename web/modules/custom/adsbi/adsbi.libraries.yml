@@ -27,6 +27,12 @@ adsbi.inventory.vm_updates.distributor:
     js/inventory.vm_updates.distributor.js: {}
   dependencies:
     - core/jquery
+adsbi.inventory.batch_ship_date:
+  js:
+    js/inventory.batch_ship_date.js: {}
+  dependencies:
+    - core/jquery
+    - adsbi/adsbi.datatables
 adsbi.drivers:
   css:
     theme:
@@ -60,3 +66,8 @@ adsbi.datatables:
     libraries/DataTables/dist/js/datatables.js: {}
   dependencies:
     - core/jquery
+adsbi.fontawesome:
+  css:
+    theme:
+      libraries/fontawesome/dist/css/all.css: {}
+

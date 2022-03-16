@@ -5,6 +5,10 @@ namespace Drupal\adsbi\Controller;
 use Drupal\adsbi\Utils\AdsbiUtils;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Database;
+use Drupal\Core\File\FileSystem;
+use Drupal\file\Entity\File;
+use Drupal\user\Entity\User;
+use Ifsnop\Mysqldump as IMysqldump;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -2123,9 +2127,36 @@ SQL;
   /**
    * 
    */
-  private function getBatchShipDateReview($rows, $table) {
+  private function getBaseInventoryTable($target) {
+    $table = '';
+    switch ($target) {
+      case 'inventoryCompliance':
+        $table = 'InventoryCompliance';
+        break;
+      case 'inventoryACS':
+        $table = 'InventoryACS';
+        break;
+      case 'vm2022Updates':
+        $table = 'VM2022Updates';
+        break;
+    }
+    return $table;
+  }
+
+  /**
+   * 
+   */
+  private function batchShipDateReview($rows, $table) {
     // Array to hold return data
-    $review = [];
+    $review = [
+      'data'      => [],
+      'post'      => [],
+      'update'    => 0,
+      'overwrite' => 0,
+      'ignore'    => 0,
+      'missing'   => 0,
+      'error'     => 0,
+    ];
 
     foreach ($rows as $row) {
       $did  = $row[0];
@@ -2134,49 +2165,62 @@ SQL;
       $current = self::getInventoryShipDateRecord($table, $did);
 
       if (false === $current) {
-        $review[] = [
+        $review['data'][] = [
           'DriverID' => $did,
           'ShipDate' => '',
           'Message'  => 'Driver not found in target dataset',
-          'status'   => 'danger'
+          'status'   => 'info'
         ];
+        $review['missing'] += 1;
         continue;
       }
 
       $dp = date_parse($date);
       if ((false === $dp) || $dp['warning_count'] || $dp['error_count'] || empty($dp['year']) || empty($dp['month']) || empty($dp['day'])) {
-        $review[] = [
+        $review['data'][] = [
           'DriverID' => $did,
           'ShipDate' => '',
           'Message'  => sprintf('Invalid Ship Date value: %s', $date),
           'status'   => 'danger'
         ];
+        $review['error'] += 1;
         continue;
       } else {
         $shipDate = sprintf('%s-%s-%s', $dp['year'], str_pad($dp['month'], 2, '0', STR_PAD_LEFT), str_pad($dp['day'], 2, '0', STR_PAD_LEFT));
       }
 
       if (empty($current['ShipDate'])) {
-        $review[] = [
+        $review['data'][] = [
           'DriverID' => $did,
           'ShipDate' => $shipDate,
           'Message'  => '',
-          'status'   => ''
+          'status'   => 'success'
         ];
+        $review['post'][] = [
+          'DriverID' => $did,
+          'ShipDate' => $shipDate,
+        ];
+        $review['update'] += 1;
       } elseif ($current['ShipDate'] === $shipDate) {
-        $review[] = [
+        $review['data'][] = [
           'DriverID' => $did,
           'ShipDate' => $shipDate,
           'Message'  => sprintf('Ship Date already set to %s', $shipDate),
-          'status'   => 'info'
+          'status'   => 'secondary'
         ];
+        $review['ignore'] += 1;
       } else {
-        $review[] = [
+        $review['data'][] = [
           'DriverID' => $did,
           'ShipDate' => $shipDate,
           'Message'  => sprintf('Updating Ship Date from %s to %s', $current['ShipDate'], $shipDate),
           'status'   => 'warning'
         ];
+        $review['post'][] = [
+          'DriverID' => $did,
+          'ShipDate' => $shipDate,
+        ];
+        $review['overwrite'] += 1;
       }
     }
 
@@ -2202,6 +2246,99 @@ SQL;
     } else {
       return FALSE;
     }
+  }
+
+  /**
+   * 
+   */
+  private function batchShipDateUpdate($rows, $table) {
+    $file_system = \Drupal::service('file_system');
+    $stream_wrapper_manager = \Drupal::service('stream_wrapper_manager');
+
+    $et  = new \DateTimeZone('America/New_York');
+    $now = new \DateTime('now', $et);
+
+    $user = User::load(\Drupal::currentUser()->id());
+
+    $dir  = 'public://adsbi/backups';
+    $base = sprintf('%s.%s.%s.sql.txt', $now->format('ymdHis'), $user->getAccountName(), $table);
+    $uri  = sprintf('%s/%s', $dir, $base);
+
+    if (!$file_system->prepareDirectory($dir, FileSystem::CREATE_DIRECTORY | FileSystem::MODIFY_PERMISSIONS)) {
+      return [
+        'success' => FALSE,
+        'message' => 'Failed to prepare public://adsbi/backups directory',
+      ];
+    }
+
+    $tempUri  = sprintf('temporary://%s', $base);
+    $tempPath = $file_system->realpath($tempUri);
+
+    $ads_prod =  Database::getConnectionInfo('ads_prod');
+
+    try {
+      $dump = new IMysqldump\Mysqldump(
+        sprintf('mysql:host=%s;dbname=%s', $ads_prod['default']['host'], $ads_prod['default']['database']),
+        $ads_prod['default']['username'],
+        $ads_prod['default']['password'],
+        ['include-tables' => [$table], 'complete-insert' => TRUE]
+      );
+      $dump->start($tempPath);
+
+      $sql_uri = $file_system->move($tempUri, $uri, FileSystem::EXISTS_ERROR);
+      $file = File::create([
+        'uri'    => $sql_uri,
+        'uid'    => $user->id(),
+        'status' => FILE_STATUS_PERMANENT,
+      ]);
+      $file->save();
+      $sql_fid = $file->id();
+    } catch (\Exception $e) {
+      return [
+        'success' => FALSE,
+        'message' => $e->getMessage(),
+      ];
+    }
+
+    $base = sprintf('%s.%s.%s.json', $now->format('ymdHis'), $user->getAccountName(), $table);
+    $uri  = sprintf('%s/%s', $dir, $base);
+
+    try {
+      $json_uri = $file_system->saveData(json_encode($rows), $uri, FileSystem::EXISTS_ERROR);
+      $file = File::create([
+        'uri'    => $json_uri,
+        'uid'    => $user->id(),
+        'status' => FILE_STATUS_PERMANENT,
+      ]);
+      $file->save();
+      $json_fid = $file->id();
+    } catch (\Exception $e) {
+      return [
+        'success' => FALSE,
+        'message' => $e->getMessage(),
+      ];
+    }
+
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Perform the updates in the ads_prod database
+    $affected = 0;
+    for ($i = 0; $i < count($rows); $i++) {
+      $matched = $ads_prod->update($table)
+        ->fields(['ShipDate' => $rows[$i]->ShipDate])
+        ->condition('DriverID', $rows[$i]->DriverID)
+        ->execute();
+
+      $affected += $matched;
+    }
+
+    return [
+      'success'  => TRUE,
+      'sql_fid'  => $sql_fid,
+      'json_fid' => $json_fid,
+      'affected' => $affected,
+    ];
   }
 
 
@@ -2339,28 +2476,19 @@ SQL;
   /**
    * 
    */
-  public static function getInventoryUpgradesReview($rows) {
-    $table = 'InventoryACS';
+  public static function doBatchShipDateReview($rows, $target) {
+    $table = self::getBaseInventoryTable($target);
 
-    return self::getBatchShipDateReview($rows, $table);
+    return self::batchShipDateReview($rows, $table);
   }
 
   /**
    * 
    */
-  public static function getKSHHSwapsReview($rows) {
-    $table = 'InventoryCompliance';
+  public static function doBatchShipDateUpdate($rows, $target) {
+    $table = self::getBaseInventoryTable($target);
 
-    return self::getBatchShipDateReview($rows, $table);
-  }
-
-  /**
-   * 
-   */
-  public static function getVMUpdatesReview($rows) {
-    $table = 'VM2022Updates';
-
-    return self::getBatchShipDateReview($rows, $table);
+    return self::batchShipDateUpdate($rows, $table);
   }
 
 

@@ -1,0 +1,44 @@
+{{ attach_library('adsbi/adsbi.fontawesome') }}
+{{ attach_library('adsbi/adsbi.inventory') }}
+
+<div id="inventory-batchshipdate" class="content-wrapper" data-activate="#inventory-batchshipdate-nav">
+  <h1>Batch Ship Date Edit</h1>
+
+  {% if 1 > rows_affected %}
+  <div class="row">
+    <div class="col-9">
+      <div class="alert alert-warning batch-ship-alert" role="alert">
+        <span>The update requested did not result in any changes to the dataset. Please <a href="javascript:history.go(-2)" class="alert-link">Go Back</a> and try again.</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-9">
+      <h3 class="my-3">Dataset: <span style="color:#007bff">{{ dataset }}</span></h3>
+      <h3 class="my-3">Records Updated: <span style="color:#007bff">{{ rows_affected }}</span></h3>
+
+      {% if 0 < rows_affected %}
+      <p class="lead mt-5">
+        Prior to the batch update, a backup was made of the dataset in case the operation needs to be reverted.
+      </p>
+      <p>
+        The file is saved in a safe place. Let an admin know immediately if you find an error that requires the update to be reverted.
+      </p>
+      <p class="lead mt-5">
+        A summary of the changes that were made was also saved for future reference.
+      </p>
+      <p>
+        <i class="fa-solid fa-file-lines"></i> <a href="{{ json_url }}" download>Click here</a> to download the summary file.
+      </p>
+      <p class="lead mt-5">
+        Visit the dashboard to see the result of the update.
+      </p>
+      <p>
+        <a class="btn btn-secondary" href="{{ retail_dash_link }}" role="button">{{ retail_dash_name }}</a> <a class="btn btn-warning" href="{{ dist_dash_link }}" role="button">{{ dist_dash_name }}</a>
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>

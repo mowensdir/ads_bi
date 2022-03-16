@@ -9,3 +9,16 @@
   display: inline-flex;
   float: right;
 }
+div.alert.alert-warning.batch-ship-alert::before {
+  -webkit-background-size: 1rem 1rem;
+  background-size: 1rem 1rem;
+  background-position: 0.25rem 0.5rem;
+}
+.batch-ship-alert {
+  position: relative;
+}
+.batch-ship-alert span {
+  line-height: 1.75rem;
+  position: absolute;
+  top: 0.875rem;
+}

@@ -4,8 +4,11 @@ namespace Drupal\adsbi\Controller;
 
 use Drupal\adsbi\Controller\InventoryDataController;
 use Drupal\adsbi\Utils\AdsbiUtils;
-use Drupal\user\Entity\User;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Url;
+use Drupal\file\Entity\File;
+use Drupal\user\Entity\User;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Defines the InventoryController class.
@@ -254,8 +257,6 @@ class InventoryController extends ControllerBase {
 
       $context = ['navtabid' => '#inventory-batchshipdate-nav'];
     } else {
-      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--batch_ship_date--review.html.twig';
-
       $target = \Drupal::request()->request->get('target');
       $data   = \Drupal::request()->request->get('data');
       $lines  = explode("\n", trim($data));
@@ -271,23 +272,148 @@ class InventoryController extends ControllerBase {
         $rows[] = [intval($cols[0]), $cols[1]];
       }
 
-      if ('inventoryCompliance' === $target) {
-        $dataset = 'Inventory Upgrades';
-        $review  = InventoryDataController::getInventoryUpgradesReview($rows);
-      } elseif ('inventoryACS' === $target) {
-        $dataset = 'KS HH Swaps';
-        $review  = InventoryDataController::getKSHHSwapsReview($rows);
-      } elseif ('vm2022Updates' === $target) {
-        $dataset = 'VM Updates';
-        $review  = InventoryDataController::getVMUpdatesReview($rows);
+      if (('inventoryCompliance' === $target) || ('inventoryACS' === $target) || ('vm2022Updates' === $target)) {
+        $dataset = $this->getInventoryDataSetFromTarget($target);
+        $review  = InventoryDataController::doBatchShipDateReview($rows, $target);
+
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--batch_ship_date--review.html.twig';
+
+        $context = [
+          'target'         => $target,
+          'dataset'        => $dataset,
+          'rows_total'     => count($review['data']),
+          'rows_update'    => $review['update'],
+          'rows_overwrite' => $review['overwrite'],
+          'rows_ignore'    => $review['ignore'],
+          'rows_missing'   => $review['missing'],
+          'rows_error'     => $review['error'],
+          'rows_affected'  => $review['update'] + $review['overwrite'],
+          'json_review'    => json_encode($review['data']),
+          'json_post'      => json_encode($review['post']),
+        ];
       } else {
-        $dataset = '';
-        $review  = [];
+        // Unexpected target dataset value, show error screen
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/error.html.twig';
+
+        $context = [
+          'navtabid' => '#inventory-batchshipdate-nav',
+          'message'  => 'Unrecognized target dataset value. Could not complete your request, please try again.',
+          'link'     => '/app/inventory/batch-ship-date',
+        ];
+      }
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
+   * 
+   */
+  public function batchShipDateRun() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-batchshipdate-nav'];
+
+      return [
+        '#type'     => 'inline_template',
+        '#template' => file_get_contents($template_path),
+        '#context'  => $context,
+      ];
+    } else {
+      $target = \Drupal::request()->request->get('target');
+      $json   = \Drupal::request()->request->get('json');
+
+      $update = json_decode($json);
+
+      if (is_null($update) || !is_array($update) || empty($update)) {
+        // Could not decode JSON, show error screen
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/error.html.twig';
+
+        $context = [
+          'navtabid' => '#inventory-batchshipdate-nav',
+          'message'  => 'Malformed JSON data object. Could not complete your request, please try again.',
+          'link'     => '/app/inventory/batch-ship-date',
+        ];
       }
 
+      if (('inventoryCompliance' === $target) || ('inventoryACS' === $target) || ('vm2022Updates' === $target)) {
+        $result = InventoryDataController::doBatchShipDateUpdate($update, $target);
+        
+        if ($result['success']) {
+          $url    = Url::fromRoute('adsbi.inventory.batchshipdate.complete');
+          $query  = [
+            'target'   => $target,
+            'sql_fid'  => $result['sql_fid'],
+            'json_fid' => $result['json_fid'],
+            'affected' => $result['affected'],
+          ];
+          $path = $url->setOption('query', $query)->toString();
+          $response = new RedirectResponse($path);
+          $response->send();
+          return;
+        } else {
+          // Ship Date update failed, show error screen
+          $template_path = drupal_get_path('module', 'adsbi') . '/templates/error.html.twig';
+
+          $context = [
+            'navtabid' => '#inventory-batchshipdate-nav',
+            'message'  => $result['message'],
+            'link'     => '/app/inventory/batch-ship-date',
+          ];
+        }
+      } else {
+        // Unexpected target dataset value, show error screen
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/error.html.twig';
+
+        $context = [
+          'navtabid' => '#inventory-batchshipdate-nav',
+          'message'  => 'Unrecognized target dataset value. Could not complete your request, please try again.',
+          'link'     => '/app/inventory/batch-ship-date',
+        ];
+      }
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
+   * 
+   */
+  public function batchShipDateComplete() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-batchshipdate-nav'];
+    } else {
+      $target   = \Drupal::request()->query->get('target');
+      $sql_fid  = \Drupal::request()->query->get('sql_fid');
+      $json_fid = \Drupal::request()->query->get('json_fid');
+      $affected = \Drupal::request()->query->get('affected');
+
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--batch_ship_date--complete.html.twig';
+
+      $dash = $this->getDashMetaFromTarget($target);
+
       $context = [
-        'dataset'     => $dataset,
-        'json_review' => json_encode($review),
+        'dataset'          => $this->getInventoryDataSetFromTarget($target),
+        'sql_url'          => file_create_url(File::load($sql_fid)->getFileUri()),
+        'json_url'         => file_create_url(File::load($json_fid)->getFileUri()),
+        'rows_affected'    => intval($affected),
+        'retail_dash_link' => $dash['retail_link'],
+        'retail_dash_name' => $dash['retail_name'],
+        'dist_dash_link'   => $dash['dist_link'],
+        'dist_dash_name'   => $dash['dist_name'],
       ];
     }
 
@@ -497,6 +623,7 @@ class InventoryController extends ControllerBase {
 
     $template = [
       'dealer'     => '',
+      'state'      => '',
       'drivers'    => 0,
       'unresolved' => 0,
       'shipped'    => 0,
@@ -510,6 +637,7 @@ class InventoryController extends ControllerBase {
       if (!isset($dealerbd[$key])) {
         $dealerbd[$key] = $template;
         $dealerbd[$key]['dealer'] = $key;
+        $dealerbd[$key]['state']  = $driver['tState'];
       }
 
       $dealerbd[$key]['drivers']++;
@@ -521,6 +649,7 @@ class InventoryController extends ControllerBase {
       if (!isset($dealerbd[$key])) {
         $dealerbd[$key] = $template;
         $dealerbd[$key]['dealer'] = $key;
+        $dealerbd[$key]['state']  = $driver['TerritoryState'];
       }
 
       $dealerbd[$key]['drivers']++;
@@ -532,6 +661,7 @@ class InventoryController extends ControllerBase {
       if (!isset($dealerbd[$key])) {
         $dealerbd[$key] = $template;
         $dealerbd[$key]['dealer'] = $key;
+        $dealerbd[$key]['state']  = $driver['TerritoryState'];
       }
 
       $dealerbd[$key]['drivers']++;
@@ -549,4 +679,55 @@ class InventoryController extends ControllerBase {
     return array_values($dealerbd);
   }
 
+  /**
+   * 
+   */
+  private function getInventoryDataSetFromTarget($target) {
+    $dataset = '';
+    switch ($target) {
+      case 'inventoryCompliance':
+        $dataset = 'Inventory Upgrades';
+        break;
+      case 'inventoryACS':
+        $dataset = 'KS HH Swaps';
+        break;
+      case 'vm2022Updates':
+        $dataset = 'VM Updates';
+        break;
+    }
+    return $dataset;
+  }
+
+  /**
+   * 
+   */
+  private function getDashMetaFromTarget($target) {
+    $dash = [
+      'retail_link' => '',
+      'retail_name' => '',
+      'dist_link'   => '',
+      'dist_name'   => '',
+    ];
+    switch ($target) {
+      case 'inventoryCompliance':
+        $dash['retail_link'] = Url::fromRoute('adsbi.inventory.upgrades');
+        $dash['retail_name'] = 'Device Upgrades';
+        $dash['dist_link']   = Url::fromRoute('adsbi.inventory.distributorupgrades');
+        $dash['dist_name']   = 'Distributor Upgrades';
+        break;
+      case 'inventoryACS':
+        $dash['retail_link'] = Url::fromRoute('adsbi.inventory.ksswapsretail');
+        $dash['retail_name'] = 'KS HH Swaps Retail';
+        $dash['dist_link']   = Url::fromRoute('adsbi.inventory.ksswapsdistributors');
+        $dash['dist_name']   = 'KS HH Swaps Distributors';
+        break;
+      case 'vm2022Updates':
+        $dash['retail_link'] = Url::fromRoute('adsbi.inventory.vmupdatesretail');
+        $dash['retail_name'] = 'VM Updates Retail';
+        $dash['dist_link']   = Url::fromRoute('adsbi.inventory.vmupdatesdistributors');
+        $dash['dist_name']   = 'VM Updates Distributors';
+        break;
+    }
+    return $dash;
+  }
 }

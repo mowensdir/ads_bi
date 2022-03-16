@@ -59,6 +59,41 @@ adsbi.inventory.vmupdatesdistributors:
     _title: 'VM Updates Distributors'
   requirements:
     _permission: 'access adsbi'
+adsbi.inventory.batchshipdate:
+  path: '/app/inventory/batch-ship-date'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::batchShipDate'
+    _title: 'Batch Ship Date Edit'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.batchshipdate.review:
+  path: '/app/inventory/batch-ship-date/review'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::batchShipDateReview'
+    _title: 'Batch Ship Date Edit'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.batchshipdate.run:
+  path: '/app/inventory/batch-ship-date/run'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::batchShipDateRun'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.batchshipdate.complete:
+  path: '/app/inventory/batch-ship-date/complete'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::batchShipDateComplete'
+    _title: 'Batch Ship Date Complete'
+  requirements:
+    _permission: 'access adsbi'
 adsbi.drivers.customerreports:
   path: '/app/drivers/customer-reports'
   defaults:
