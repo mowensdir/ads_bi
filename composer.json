@@ -19,7 +19,7 @@
         "drupal/admin_toolbar": "^2.3",
         "drupal/adminimal_admin_toolbar": "^1.11",
         "drupal/adminimal_theme": "^1.5",
-        "drupal/bootstrap_barrio": "^5.1",
+        "drupal/bootstrap_barrio": "~5.1.6",
         "drupal/core": "^8.8",
         "drupal/core-composer-scaffold": "^8.8",
         "drupal/core-project-message": "^8.8",
