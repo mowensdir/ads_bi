@@ -33,6 +33,12 @@ adsbi.inventory.batch_ship_date:
   dependencies:
     - core/jquery
     - adsbi/adsbi.datatables
+adsbi.inventory.dataset_add_driver:
+  js:
+    js/inventory.dataset_add_driver.js: {}
+  dependencies:
+    - core/jquery
+    - adsbi/adsbi.datatables
 adsbi.drivers:
   css:
     theme:

@@ -94,6 +94,41 @@ adsbi.inventory.batchshipdate.complete:
     _title: 'Batch Ship Date Complete'
   requirements:
     _permission: 'access adsbi'
+adsbi.inventory.datasetadddriver:
+  path: '/app/inventory/dataset-add-driver'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::datasetAddDriver'
+    _title: 'Dataset Add Driver'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.datasetadddriver.review:
+  path: '/app/inventory/dataset-add-driver/review'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::datasetAddDriverReview'
+    _title: 'Dataset Add Driver'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.datasetadddriver.run:
+  path: '/app/inventory/dataset-add-driver/run'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::datasetAddDriverRun'
+  requirements:
+    _permission: 'access adsbi'
+adsbi.inventory.datasetadddriver.complete:
+  path: '/app/inventory/dataset-add-driver/complete'
+  options:
+    no_cache: 'TRUE'
+  defaults:
+    _controller: '\Drupal\adsbi\Controller\InventoryController::datasetAddDriverComplete'
+    _title: 'Dataset Add Driver Complete'
+  requirements:
+    _permission: 'access adsbi'
 adsbi.drivers.customerreports:
   path: '/app/drivers/customer-reports'
   defaults:

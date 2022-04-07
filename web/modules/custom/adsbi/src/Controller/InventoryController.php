@@ -425,6 +425,188 @@ class InventoryController extends ControllerBase {
   }
 
   /**
+   * 
+   */
+  public function datasetAddDriver() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-datasetadddriver-nav'];
+    } else {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--dataset_add_driver.html.twig';
+
+      $context = [];
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
+   * 
+   */
+  public function datasetAddDriverReview() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-datasetadddriver-nav'];
+    } else {
+      $target = \Drupal::request()->request->get('target');
+      $data   = \Drupal::request()->request->get('data');
+      $lines  = explode("\n", trim($data));
+
+      $rows = [];
+      foreach ($lines as $line) {
+        $cols = explode(',', trim($line));
+        foreach ($cols as $col) {
+          $did = trim($col);
+          if (!is_numeric($did)) {
+            continue;
+          }
+
+          $rows[] = intval($did);
+        }
+      }
+
+      if (('inventoryCompliance' === $target) || ('inventoryACS' === $target) || ('vm2022Updates' === $target)) {
+        $dataset = $this->getInventoryDataSetFromTarget($target);
+        $review  = InventoryDataController::doDatasetAddDriverReview($rows, $target);
+
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--dataset_add_driver--review.html.twig';
+
+        $context = [
+          'target'         => $target,
+          'dataset'        => $dataset,
+          'rows_total'     => count($review['data']),
+          'rows_insert'    => $review['insert'],
+          'rows_ignore'    => $review['ignore'],
+          'rows_missing'   => $review['missing'],
+          'rows_error'     => $review['error'],
+          'json_review'    => json_encode($review['data']),
+          'json_post'      => json_encode($review['post']),
+        ];
+      } else {
+        // Unexpected target dataset value, show error screen
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/error.html.twig';
+
+        $context = [
+          'navtabid' => '#inventory-datasetadddriver-nav',
+          'message'  => 'Unrecognized target dataset value. Could not complete your request, please try again.',
+          'link'     => '/app/inventory/dataset-add-driver',
+        ];
+      }
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
+   * 
+   */
+  public function datasetAddDriverRun() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-datasetadddriver-nav'];
+
+      return [
+        '#type'     => 'inline_template',
+        '#template' => file_get_contents($template_path),
+        '#context'  => $context,
+      ];
+    } else {
+      $target = \Drupal::request()->request->get('target');
+      $json   = \Drupal::request()->request->get('json');
+
+      $insert = json_decode($json);
+
+      if (is_null($insert) || !is_array($insert) || empty($insert)) {
+        // Could not decode JSON, show error screen
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/error.html.twig';
+
+        $context = [
+          'navtabid' => '#inventory-datasetadddriver-nav',
+          'message'  => 'Malformed JSON data object. Could not complete your request, please try again.',
+          'link'     => '/app/inventory/dataset-add-driver',
+        ];
+      }
+
+      if (('inventoryCompliance' === $target) || ('inventoryACS' === $target) || ('vm2022Updates' === $target)) {
+        InventoryDataController::doDatasetAddDriverInsert($insert, $target);
+        
+        $url    = Url::fromRoute('adsbi.inventory.datasetadddriver.complete');
+        $query  = [
+          'target'   => $target,
+          'inserted' => count($insert),
+        ];
+        $path = $url->setOption('query', $query)->toString();
+        $response = new RedirectResponse($path);
+        $response->send();
+        return;
+      } else {
+        // Unexpected target dataset value, show error screen
+        $template_path = drupal_get_path('module', 'adsbi') . '/templates/error.html.twig';
+
+        $context = [
+          'navtabid' => '#inventory-datasetadddriver-nav',
+          'message'  => 'Unrecognized target dataset value. Could not complete your request, please try again.',
+          'link'     => '/app/inventory/dataset-add-driver',
+        ];
+      }
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
+   * 
+   */
+  public function datasetAddDriverComplete() {
+    $user = User::load(\Drupal::currentUser()->id());
+    if (!$user->hasRole('inventory')) {
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/not-authorized.html.twig';
+
+      $context = ['navtabid' => '#inventory-datasetadddriver-nav'];
+    } else {
+      $target   = \Drupal::request()->query->get('target');
+      $inserted = \Drupal::request()->query->get('inserted');
+
+      $template_path = drupal_get_path('module', 'adsbi') . '/templates/inventory--dataset_add_driver--complete.html.twig';
+
+      $dash = $this->getDashMetaFromTarget($target);
+
+      $context = [
+        'dataset'          => $this->getInventoryDataSetFromTarget($target),
+        'rows_inserted'    => intval($inserted),
+        'retail_dash_link' => $dash['retail_link'],
+        'retail_dash_name' => $dash['retail_name'],
+        'dist_dash_link'   => $dash['dist_link'],
+        'dist_dash_name'   => $dash['dist_name'],
+      ];
+    }
+
+    return [
+      '#type'     => 'inline_template',
+      '#template' => file_get_contents($template_path),
+      '#context'  => $context,
+    ];
+  }
+
+  /**
    *
    */
   private function pivotDistributorUpgradeSummary($data) {

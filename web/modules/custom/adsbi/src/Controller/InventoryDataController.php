@@ -2237,14 +2237,13 @@ SQL;
     // Get ads_prod database connection
     $ads_prod = Database::getConnection('default', 'ads_prod');
 
-
     // Run the query
     $result = $ads_prod->query($sql, [':did' => $did]);
 
     if ($result) {
       return $result->fetchAssoc();
     } else {
-      return FALSE;
+      return false;
     }
   }
 
@@ -2266,7 +2265,7 @@ SQL;
 
     if (!$file_system->prepareDirectory($dir, FileSystem::CREATE_DIRECTORY | FileSystem::MODIFY_PERMISSIONS)) {
       return [
-        'success' => FALSE,
+        'success' => false,
         'message' => 'Failed to prepare public://adsbi/backups directory',
       ];
     }
@@ -2281,7 +2280,7 @@ SQL;
         sprintf('mysql:host=%s;dbname=%s', $ads_prod['default']['host'], $ads_prod['default']['database']),
         $ads_prod['default']['username'],
         $ads_prod['default']['password'],
-        ['include-tables' => [$table], 'complete-insert' => TRUE]
+        ['include-tables' => [$table], 'complete-insert' => true]
       );
       $dump->start($tempPath);
 
@@ -2295,7 +2294,7 @@ SQL;
       $sql_fid = $file->id();
     } catch (\Exception $e) {
       return [
-        'success' => FALSE,
+        'success' => false,
         'message' => $e->getMessage(),
       ];
     }
@@ -2314,7 +2313,7 @@ SQL;
       $json_fid = $file->id();
     } catch (\Exception $e) {
       return [
-        'success' => FALSE,
+        'success' => false,
         'message' => $e->getMessage(),
       ];
     }
@@ -2334,9 +2333,151 @@ SQL;
     }
 
     return [
-      'success'  => TRUE,
+      'success'  => true,
       'sql_fid'  => $sql_fid,
       'json_fid' => $json_fid,
+      'affected' => $affected,
+    ];
+  }
+
+  /**
+   * 
+   */
+  private function datasetAddDriverReview($rows, $table) {
+    // Array to hold return data
+    $review = [
+      'data'      => [],
+      'post'      => [],
+      'insert'    => 0,
+      'ignore'    => 0,
+      'missing'   => 0,
+      'error'     => 0,
+    ];
+
+    foreach ($rows as $did) {
+      $exists = self::driverExists($did);
+
+      if (!$exists) {
+        $review['data'][] = [
+          'DriverID' => $did,
+          'Message'  => 'Supplied DriverID not found in PROD database',
+          'status'   => 'info'
+        ];
+        $review['missing'] += 1;
+        continue;
+      }
+
+      $inDataset = self::driverInDataset($table, $did);
+
+      if ($inDataset) {
+        $review['data'][] = [
+          'DriverID' => $did,
+          'Message'  => 'Driver already exists in the target dataset',
+          'status'   => 'secondary'
+        ];
+        $review['ignore'] += 1;
+        continue;
+      }
+
+      $hasEquipment = self::driverHasEquipment($did);
+
+      if (!$hasEquipment) {
+        $review['data'][] = [
+          'DriverID' => $did,
+          'Message'  => 'Driver does not have any equipment assigned',
+          'status'   => 'danger'
+        ];
+        $review['error'] += 1;
+        continue;
+      }
+
+      $review['data'][] = [
+        'DriverID' => $did,
+        'Message'  => '',
+        'status'   => 'success'
+      ];
+      $review['post'][] = [
+        'DriverID' => $did,
+      ];
+      $review['insert'] += 1;
+    }
+
+    return $review;
+  }
+
+  /**
+   * 
+   */
+  private function driverExists($did) {
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Define Dynamic Select query
+    $query = $ads_prod->select('Drivers')->condition('DriverID', $did, '=');
+
+    // Execute count query, return true if result is not 0, false otherwise
+    if (0 != $query->countQuery()->execute()->fetchField()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * 
+   */
+  private function driverInDataset($table, $did) {
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Define Dynamic Select query
+    $query = $ads_prod->select($table)->condition('DriverID', $did, '=');
+
+    // Execute count query, return true if result is not 0, false otherwise
+    if (0 != $query->countQuery()->execute()->fetchField()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * 
+   */
+  private function driverHasEquipment($did) {
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Define Dynamic Select query
+    $query = $ads_prod->select('Items')->condition('DriverID', $did, '=')->condition('ProductID', [1, 2], 'IN');
+
+    // Execute count query, return true if result is not 0, false otherwise
+    if (0 != $query->countQuery()->execute()->fetchField()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * 
+   */
+  private function datasetAddDriverInsert($rows, $table) {
+    // Get ads_prod database connection
+    $ads_prod = Database::getConnection('default', 'ads_prod');
+
+    // Perform the inserts to the ads_prod database
+    $affected = 0;
+    for ($i = 0; $i < count($rows); $i++) {
+      $ads_prod->insert($table)
+        ->fields(['DriverID' => $rows[$i]->DriverID])
+        ->execute();
+
+      $affected += 1;
+    }
+
+    return [
+      'success'  => true,
       'affected' => $affected,
     ];
   }
@@ -2489,6 +2630,24 @@ SQL;
     $table = self::getBaseInventoryTable($target);
 
     return self::batchShipDateUpdate($rows, $table);
+  }
+
+  /**
+   * 
+   */
+  public static function doDatasetAddDriverReview($rows, $target) {
+    $table = self::getBaseInventoryTable($target);
+
+    return self::datasetAddDriverReview($rows, $table);
+  }
+
+  /**
+   * 
+   */
+  public static function doDatasetAddDriverInsert($rows, $target) {
+    $table = self::getBaseInventoryTable($target);
+
+    return self::datasetAddDriverInsert($rows, $table);
   }
 
 

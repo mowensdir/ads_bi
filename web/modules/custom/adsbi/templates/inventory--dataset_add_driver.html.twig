@@ -1,0 +1,30 @@
+{{ attach_library('adsbi/adsbi.inventory') }}
+
+<div id="inventory-datasetadddriver" class="content-wrapper" data-activate="#inventory-datasetadddriver-nav">
+  <h1>Dataset Add Driver</h1>
+
+  <h3 class="my-3">&nbsp;</h3>
+  <div class="row">
+    <div class="col-6">
+      <form id="datasetAddDriverForm" action="/app/inventory/dataset-add-driver/review" method="post">
+        <div class="form-group">
+          <label for="datasetAddDriverFormTarget">Choose a dataset target</label>
+          <select class="form-control form-control-lg" id="datasetAddDriverFormTarget" name="target" required>
+            <option value="" selected></option>
+            <option value="inventoryCompliance">Inventory Upgrades</option>
+            <option value="inventoryACS">KS HH Swaps</option>
+            <option value="vm2022Updates">VM Updates</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="datasetAddDriverFormData">List of DriverIDs to add to the dataset</label>
+          <textarea class="form-control" id="datasetAddDriverFormData" name="data" rows="12" required></textarea>
+          <small id="dataHelpBlock" class="form-text text-muted">
+            DriverIDs should be provided in either a comma delimited list or one per line.
+          </small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" id="datasetAddDriverFormSubmit">Proceed to Review</button>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+{{ attach_library('adsbi/adsbi.inventory') }}
+
+<div id="inventory-datasetadddriver" class="content-wrapper" data-activate="#inventory-datasetadddriver-nav">
+  <h1>Dataset Add Driver</h1>
+
+  {% if 1 > rows_inserted %}
+  <div class="row">
+    <div class="col-9">
+      <div class="alert alert-warning wizard-alert" role="alert">
+        <span>The insert requested did not result in any changes to the dataset. Please <a href="javascript:history.go(-2)" class="alert-link">Go Back</a> and try again.</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-9">
+      <h3 class="my-3">Dataset: <span style="color:#007bff">{{ dataset }}</span></h3>
+      <h3 class="my-3">Records Inserted: <span style="color:#007bff">{{ rows_inserted }}</span></h3>
+
+      {% if 0 < rows_inserted %}
+      <p class="lead mt-5">
+        Visit the dashboard to see the new record(s).
+      </p>
+      <p>
+        <a class="btn btn-secondary" href="{{ retail_dash_link }}" role="button">{{ retail_dash_name }}</a> <a class="btn btn-warning" href="{{ dist_dash_link }}" role="button">{{ dist_dash_name }}</a>
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
